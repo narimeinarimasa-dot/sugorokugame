@@ -46,16 +46,26 @@
             <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
             
             <!-- SHOP用ボタンエリア -->
+            <!-- 【public/index.html 内の shopArea の中身を以下に丸ごと差し替え】 -->
             <div id="shopArea" style="display: none; width: 100%;">
+                <!-- メニュー選択画面 -->
                 <div id="shopMenuButtons">
                     <button class="btn" onclick="selectShopMenu('status')" style="background:#05101a; border-color:#4dadff;">📈 ステータスを買う</button>
-                    <button class="btn" style="background:#222; border-color:#555; color:#777;" disabled>🎒 アイテムを買う（準備中）</button>
+                    <button class="btn" onclick="selectShopMenu('item')" style="background:#15051a; border-color:#b84dff;">🎒 アイテムを買う</button>
                 </div>
+                <!-- ステータス購入画面 -->
                 <div id="shopStatusButtons" style="display: none;">
                     <button class="btn" onclick="buyStatus('hp')" style="font-size:15px; width:43%; margin:5px;">❤️ HPアップ (50＄)</button>
                     <button class="btn" onclick="buyStatus('atk')" style="font-size:15px; width:43%; margin:5px;">⚔️ OFアップ (50＄)</button>
                     <button class="btn" onclick="buyStatus('def')" style="font-size:15px; width:43%; margin:5px;">🛡️ DFアップ (50＄)</button>
                 </div>
+                <!-- ★追加：アイテム購入画面 -->
+                <div id="shopItemButtons" style="display: none;">
+                    <button class="btn" onclick="buyItem('ちからのバット')" style="font-size:14px; width:90%; margin:5px;">🏏 ちからのバット (50＄) [OF+5]</button>
+                    <button class="btn" onclick="buyItem('お母さんのおむすび')" style="font-size:14px; width:90%; margin:5px;">🍙 お母さんのおむすび (30＄) [HP+30]</button>
+                    <button class="btn" onclick="buyItem('急行カード')" style="font-size:14px; width:90%; margin:5px;">🎫 急行カード (40＄) [サイコロ2個]</button>
+                </div>
+                <!-- お店を出るボタン -->
                 <button class="btn" onclick="leaveShop()" style="background:#111; border-color:#fff; margin-top:10px;">🚪 お店を出る</button>
             </div>
         </center>
