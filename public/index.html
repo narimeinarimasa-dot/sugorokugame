@@ -82,48 +82,47 @@
     <script>
         const socket = io();
 
-// 【public/index.html 内のマス自動生成ループを以下に差し替え】
-
-        // 20マスのタイトル定義（わかりやすくマークを追加）
+        // 20マスのタイトル定義
         const massTitles = {
             0: "🏁 0: スタート",  1: "👶 1: お母さん誕生", 2: "🎁 2: アイテムマス",
             3: "🏫 3: 学生時代",   4: "🛒 4: SHOPマス",     5: "💍 5: プロポーズ",
             6: "⛪ 6: 結婚式",     7: "🎁 7: アイテムマス", 8: "🍼 8: 私の誕生",
             9: "💤 9: 育児奮闘記", 10: "🛒 10: SHOPマス",   11: "⚡ 11: 子どもの反抗期",
-            12: "🎁 12: アイテムマス", 13: "💼 13: パート開始", 14: "🎨 14: 趣味の開花",
-            15: "🔥 15: 夫婦の大ゲンカ", 16: "🛒 16: SHOPマス", 17: "📱 17: 最近の話",
+            12: "🎁 12: アイテムマス", 13: "💼 13: パート開始",    14: "🎨 14: 趣味の開花",
+            15: "🔥 15: 夫婦の大ゲンカ", 16: "🛒 16: SHOPマス",   17: "📱 17: 最近の話",
             18: "🤫 18: 誕生日前のソワソワ", 19: "🎁 19: アイテムマス", 20: "🎉 20: ゴール！"
         };
 
-        // マスの種類定義（フロント側での色分け用）
+        // マスの種類定義
         const massTypes = {
             2: "item", 7: "item", 12: "item", 19: "item",
             4: "shop", 10: "shop", 16: "shop"
         };
 
-        // 20マスを画面に自動生成
+        // 【重要】20マスの自動生成は、ゲーム起動時に「1回だけ」実行する（関数の外に置く）
         const mapContainer = document.getElementById('dynamicMap');
-        for (let i = 20; i >= 0; i--) {
-            const massDiv = document.createElement('div');
-            massDiv.className = 'mass';
-            massDiv.id = `m${i}`;
-            
-            // マスの種類に応じて背景色や枠線を変える（MOTHER風・桃鉄風）
-            if (i === 20) {
-                massDiv.style.borderColor = '#ff6b6b'; // ゴールは赤
-                massDiv.style.background = '#221111';
-            } else if (i === 0) {
-                massDiv.style.borderColor = '#51cf66'; // スタートは緑
-            } else if (massTypes[i] === "item") {
-                massDiv.style.borderColor = '#fcc419'; // アイテムは黄色枠
-                massDiv.style.background = '#1a1505';  // 薄い黄色背景
-            } else if (massTypes[i] === "shop") {
-                massDiv.style.borderColor = '#4dadff'; // SHOPは青枠
-                massDiv.style.background = '#05101a';  // 薄い青背景
-            }
+        if (mapContainer && mapContainer.children.length === 0) {
+            for (let i = 20; i >= 0; i--) {
+                const massDiv = document.createElement('div');
+                massDiv.className = 'mass';
+                massDiv.id = `m${i}`;
+                
+                if (i === 20) {
+                    massDiv.style.borderColor = '#ff6b6b';
+                    massDiv.style.background = '#221111';
+                } else if (i === 0) {
+                    massDiv.style.borderColor = '#51cf66';
+                } else if (massTypes[i] === "item") {
+                    massDiv.style.borderColor = '#fcc419';
+                    massDiv.style.background = '#1a1505';
+                } else if (massTypes[i] === "shop") {
+                    massDiv.style.borderColor = '#4dadff';
+                    massDiv.style.background = '#05101a';
+                }
 
-            massDiv.innerHTML = `<span class="mass-title">${massTitles[i]}</span><div class="pieces-area" id="p${i}"></div>`;
-            mapContainer.appendChild(massDiv);
+                massDiv.innerHTML = `<span class="mass-title">${massTitles[i]}</span><div class="pieces-area" id="p${i}"></div>`;
+                mapContainer.appendChild(massDiv);
+            }
         }
 
         function joinGame() {
@@ -142,46 +141,42 @@
             // メッセージウィンドウの更新
             document.getElementById('msgWindow').innerText = state.currentMessage;
 
-            // すべてのマス（0〜20）のコマエリアをクリア
+            // すべてのマス（0〜20）のコマエリアを一度クリア
             for(let i = 0; i <= 20; i++) {
                 const container = document.getElementById(`p${i}`);
                 if(container) container.innerHTML = '';
             }
 
-            // 全プレイヤーのコマを配置
+            // 全プレイヤーのコマを再配置
             Object.keys(state.players).forEach(id => {
                 const p = state.players[id];
                 const piece = document.createElement('div');
                 piece.className = 'piece';
                 piece.style.backgroundColor = p.color;
                 
-                // 自分のコマには白い枠線をつける
                 if(id === socket.id) {
                     piece.style.boxShadow = "0 0 0 2px #fff";
                 }
 
-                // コマの上に名前の最初の3文字を表示
                 const nameLabel = document.createElement('span');
                 nameLabel.className = 'piece-name';
                 nameLabel.innerText = p.name.substring(0, 3);
                 piece.appendChild(nameLabel);
 
-                // 該当するマスに追加
                 const container = document.getElementById(`p${p.pos}`);
                 if(container) container.appendChild(piece);
             });
 
-         // --- ここから追加：全員のステータス表示を更新 ---
+            // 全員のステータス表示を更新（消えないようにここで毎回きれいに描き直す）
             const statusArea = document.getElementById('statusArea');
             if (statusArea) {
-                statusArea.innerHTML = ''; // 一旦クリア
+                statusArea.innerHTML = ''; 
 
                 Object.keys(state.players).forEach(id => {
                     const p = state.players[id];
                     const card = document.createElement('div');
                     card.className = 'status-card';
                     
-                    // 自分のカードにはうっすら白い影をつける
                     if(id === socket.id) {
                         card.style.boxShadow = "0 0 8px rgba(255,255,255,0.8)";
                     }
@@ -197,7 +192,6 @@
                     statusArea.appendChild(card);
                 });
             }
-            // --- ここまで追加 ---
 
             // ボタンの手番制御
             const currentTurnId = state.socketIds[state.turnIdx];
