@@ -142,8 +142,8 @@ io.on('connection', (socket) => {
                     if (Math.random() < 0.50) {
                         encounteredEnemies = [{
                             name: "⚡きょだいなアリ（中ボス）",
-                            hp: 60,       // 通常の敵の2倍〜3倍タフ！
-                            maxHp: 60,
+                            hp: 100,       // 通常の敵の2倍〜3倍タフ！
+                            maxHp: 100,
                             atk: 14       // 攻撃力もかなり高い！
                         }];
                         isBossBattle = true;
