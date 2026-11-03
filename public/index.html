@@ -63,30 +63,44 @@
     <script>
         const socket = io();
 
-        // 20マスのタイトル定義
+// 【public/index.html 内のマス自動生成ループを以下に差し替え】
+
+        // 20マスのタイトル定義（わかりやすくマークを追加）
         const massTitles = {
-            0: "🏁 0: スタート",  1: "👶 1: お母さん誕生", 2: "🎒 2: 幼少期の思い出",
-            3: "🏫 3: 学生時代",   4: "💬 4: お父さんと出会い", 5: "💍 5: プロポーズ",
-            6: "⛪ 6: 結婚式",     7: "🏡 7: 新婚生活",     8: "🍼 8: 私の誕生",
-            9: "💤 9: 育児奮闘記", 10: "♨️ 10: 初めての家族旅行", 11: "⚡ 11: 子どもの反抗期",
-            12: "🍱 12: 毎日のお弁当", 13: "💼 13: パート開始",    14: "🎨 14: 趣味の開花",
-            15: "🔥 15: 夫婦の大ゲンカ", 16: "💬 16: 家族会議",   17: "📱 17: 最近の話",
-            18: "🤫 18: 誕生日前のソワソワ", 19: "✨ 19: もうすぐ会場", 20: "🎁 20: ゴール！"
+            0: "🏁 0: スタート",  1: "👶 1: お母さん誕生", 2: "🎁 2: アイテムマス",
+            3: "🏫 3: 学生時代",   4: "🛒 4: SHOPマス",     5: "💍 5: プロポーズ",
+            6: "⛪ 6: 結婚式",     7: "🎁 7: アイテムマス", 8: "🍼 8: 私の誕生",
+            9: "💤 9: 育児奮闘記", 10: "🛒 10: SHOPマス",   11: "⚡ 11: 子どもの反抗期",
+            12: "🎁 12: アイテムマス", 13: "💼 13: パート開始", 14: "🎨 14: 趣味の開花",
+            15: "🔥 15: 夫婦の大ゲンカ", 16: "🛒 16: SHOPマス", 17: "📱 17: 最近の話",
+            18: "🤫 18: 誕生日前のソワソワ", 19: "🎁 19: アイテムマス", 20: "🎉 20: ゴール！"
         };
 
-        // 20マスを画面に自動生成（ゴールが一番上にくるように20からカウントダウン）
+        // マスの種類定義（フロント側での色分け用）
+        const massTypes = {
+            2: "item", 7: "item", 12: "item", 19: "item",
+            4: "shop", 10: "shop", 16: "shop"
+        };
+
+        // 20マスを画面に自動生成
         const mapContainer = document.getElementById('dynamicMap');
         for (let i = 20; i >= 0; i--) {
             const massDiv = document.createElement('div');
             massDiv.className = 'mass';
             massDiv.id = `m${i}`;
             
-            // 特殊マスの色変え
+            // マスの種類に応じて背景色や枠線を変える（MOTHER風・桃鉄風）
             if (i === 20) {
-                massDiv.style.borderColor = '#ff6b6b';
+                massDiv.style.borderColor = '#ff6b6b'; // ゴールは赤
                 massDiv.style.background = '#221111';
             } else if (i === 0) {
-                massDiv.style.borderColor = '#51cf66';
+                massDiv.style.borderColor = '#51cf66'; // スタートは緑
+            } else if (massTypes[i] === "item") {
+                massDiv.style.borderColor = '#fcc419'; // アイテムは黄色枠
+                massDiv.style.background = '#1a1505';  // 薄い黄色背景
+            } else if (massTypes[i] === "shop") {
+                massDiv.style.borderColor = '#4dadff'; // SHOPは青枠
+                massDiv.style.background = '#05101a';  // 薄い青背景
             }
 
             massDiv.innerHTML = `<span class="mass-title">${massTitles[i]}</span><div class="pieces-area" id="p${i}"></div>`;
