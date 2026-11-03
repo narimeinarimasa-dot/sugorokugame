@@ -196,56 +196,65 @@
             const shopArea = document.getElementById('shopArea');
             const shopMenuButtons = document.getElementById('shopMenuButtons');
             const shopStatusButtons = document.getElementById('shopStatusButtons');
+            
             const bState = state.battleState;
             const sState = state.shopState;
+
+            // すべてのボタンエリアを一旦非表示にリセット
             rollBtn.style.display = 'none';
             attackBtn.style.display = 'none';
             shopArea.style.display = 'none';
             shopMenuButtons.style.display = 'none';
             shopStatusButtons.style.display = 'none';
-            if (bState && bState.inBattle) {
-            attackBtn.style.display = 'block';
-            if (bState.activePlayerId === socket.id) {
-            attackBtn.disabled = false;
-            attackBtn.innerText = ⚔️ たたかう (${bState.enemies.length}体残る);
-            } else {
-            attackBtn.disabled = true;
-            const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
-            attackBtn.innerText = ⚔️ ${pName}が 戦闘中...;
-            }
-            }
-            else if (sState && sState.inShop) {
-            shopArea.style.display = 'block';
-            dif (sState.mode === 'menu') {
-            shopMenuButtons.style.display = 'block';
-            } else if (sState.mode === 'status') {
-            shopStatusButtons.style.display = 'block';
-            }
-            const isMyShop = (sState.activePlayerId === socket.id);
-            const allShopBtns = shopArea.getElementsByTagName('button');
-            for (let btn of allShopBtns) {
-            if (!btn.innerText.includes("準備中")) {
-            btn.disabled = !isMyShop;
-            }
-            }
-            if (!isMyShop) {
-            const pName = state.players[sState.activePlayerId] ? state.players[sState.activePlayerId].name : "誰か";
-            document.getElementById('msgWindow').innerText = 🛒 ${pName}が お買い物しています...;
-            }
-            }
-            else {
-            rollBtn.style.display = 'block';
-            if (currentTurnId === socket.id) {
-            rollBtn.disabled = false;
-            rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
-           } else {
-           rollBtn.disabled = true;
-           const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
-           rollBtn.innerText = ${turnName}の 番を 待っています...;
-           }
-           }
-           });
 
+            // 1. 戦闘中の場合
+            if (bState && bState.inBattle) {
+                attackBtn.style.display = 'block'; 
+                if (bState.activePlayerId === socket.id) {
+                    attackBtn.disabled = false;
+                    attackBtn.innerText = `⚔️ たたかう (${bState.enemies.length}体残る)`;
+                } else {
+                    attackBtn.disabled = true;
+                    const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
+                    attackBtn.innerText = `⚔️ ${pName}が 戦闘中...`;
+                }
+            } 
+            // 2. お買い物中の場合
+            else if (sState && sState.inShop) {
+                shopArea.style.display = 'block';
+                
+                if (sState.mode === 'menu') {
+                    shopMenuButtons.style.display = 'block';
+                } else if (sState.mode === 'status') {
+                    shopStatusButtons.style.display = 'block';
+                }
+
+                const isMyShop = (sState.activePlayerId === socket.id);
+                const allShopBtns = shopArea.getElementsByTagName('button');
+                for (let btn of allShopBtns) {
+                    if (!btn.innerText.includes("準備中")) {
+                        btn.disabled = !isMyShop;
+                    }
+                }
+                
+                if (!isMyShop) {
+                    const pName = state.players[sState.activePlayerId] ? state.players[sState.activePlayerId].name : "誰か";
+                    document.getElementById('msgWindow').innerText = `🛒 ${pName}が お買い物しています...`;
+                }
+            } 
+            // 3. 通常移動中の場合
+            else {
+                rollBtn.style.display = 'block'; 
+                if (currentTurnId === socket.id) {
+                    rollBtn.disabled = false;
+                    rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
+                } else {
+                    rollBtn.disabled = true;
+                    const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
+                    rollBtn.innerText = `${turnName}の 番を 待っています...`;
+                }
+            }
+        });
     </script>
 </body>
 </html>
