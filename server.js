@@ -49,12 +49,27 @@ const MAP_EVENTS = {
 // 例：
 // if (player.pos > 20) player.pos = 20;
 // if (player.pos === 20) { ... }
+// 【server.js のgameStateの定義部分にbattleStateを追加】
 let gameState = {
-    players: {}, // socketId: { name, pos, color, isMom }
+    players: {}, 
     turnIdx: 0,
     socketIds: [],
-    currentMessage: "家族みんなが参加するのを待っている..."
+    currentMessage: "家族みんなが参加するのを待っている...",
+    // --- 追加：戦闘管理用ステータス ---
+    battleState: {
+        inBattle: false,
+        activePlayerId: null,
+        enemies: [] // 出現した敵の配列 [{ name: "ちっちゃいハエ", hp: 15 }]
+    }
 };
+
+// 敵キャラクターのプール
+const ENEMY_POOL = [
+    { name: "おんちなオウム", hp: 20, atk: 6 },
+    { name: "きまぐれなノラいぬ", hp: 25, atk: 8 },
+    { name: "にやにやにわとり", hp: 15, atk: 5 },
+    { name: "ちっちゃいハエ", hp: 10, atk: 3 }
+];
 
 // 4人分のコマの色
 const COLORS = ['#ff6b6b', '#4dadff', '#51cf66', '#fcc419'];
@@ -90,48 +105,134 @@ io.on('connection', (socket) => {
     });
 
 // 【server.js の socket.on('roll_dice', ...) の中身を以下に丸ごと差し替え】
-
+// 【io.on('connection', ...) 内の socket.on('roll_dice', ...) を以下に差し替え】
     socket.on('roll_dice', () => {
-        if (gameState.socketIds[gameState.turnIdx] === socket.id) {
+        // 戦闘中でない場合のみサイコロが振れる
+        if (!gameState.battleState.inBattle && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const dice = Math.floor(Math.random() * 3) + 1; // 1〜3進む
             const player = gameState.players[socket.id];
             
-            player.pos += dice;
-            if (player.pos > 20) player.pos = 20;
+            let encounteredEnemies = [];
+            
+            // 【1マス進むごとに15%の確率でエンカウント判定（複数検知）】
+            for (let m = 0; m < dice; m++) {
+                player.pos += 1;
+                if (player.pos > 20) {
+                    player.pos = 20;
+                    break;
+                }
+                
+                // 15%の確率を引いたか（※スタートとゴール、SHOP・アイテムマスは安全地帯とする）
+                const massType = MASS_TYPES[player.pos];
+                if (massType === "normal" && player.pos !== 20) {
+                    if (Math.random() < 0.15) {
+                        // 敵プールからランダムに1体選んでコピー（HPを独立させるため）
+                        const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
+                        encounteredEnemies.push({
+                            name: template.name,
+                            hp: template.hp,
+                            maxHp: template.hp,
+                            atk: template.atk
+                        });
+                    }
+                }
+            }
 
             const massType = MASS_TYPES[player.pos];
             let eventText = MAP_EVENTS[player.pos] || "平穏な日常が過ぎていく。";
-            let levelUpText = ""; // レベルアップした時用の特別な文章を入れる変数
 
-            // マスの種類に応じたギミック処理
-            if (massType === "item") {
-                eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
-            } else if (massType === "shop") {
-                eventText += "\n\n▶ [お店が開いた！好きなカードを 買える（仮）]";
+            // 戦闘に遭遇した場合
+            if (encounteredEnemies.length > 0) {
+                gameState.battleState.inBattle = true;
+                gameState.battleState.activePlayerId = socket.id;
+                gameState.battleState.enemies = encounteredEnemies;
+
+                let enemyNames = encounteredEnemies.map(e => `「${e.name}」`).join(' と ');
+                gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
             } else {
-                // 【通常マス】止まると経験値（EX）が 5〜10 の間でランダムに貰える
-                const gainedEx = Math.floor(Math.random() * 6) + 5; 
-                player.ex += gainedEx;
-                eventText += `\n\n▶ ${player.name}は 経験値を 【 ${gainedEx} 】 獲得した！`;
+                // 通常の移動処理（以前のロジックと同じ）
+                let levelUpText = "";
+                if (massType === "item") {
+                    eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
+                } else if (massType === "shop") {
+                    eventText += "\n\n▶ [お店が開いた！好きなカードを 買える（仮）]";
+                } else {
+                    const gainedEx = Math.floor(Math.random() * 6) + 5; 
+                    player.ex += gainedEx;
+                    eventText += `\n\n▶ ${player.name}は 経験値を 【 ${gainedEx} 】 獲得した！`;
 
-                // 【レベルアップ判定】経験値が 20 たまるごとにレベルアップ！
-                const nextLv = Math.floor(player.ex / 20) + 1;
-                if (nextLv > player.lv) {
-                    player.lv = nextLv;
-                    
-                    // ステータスの上昇（お母さんは大サービスで多めにアップ！）
-                    const hpPlus = player.isMom ? 15 : 8;
-                    const atkPlus = player.isMom ? 5 : 3;
-                    const defPlus = player.isMom ? 3 : 2;
+                    const nextLv = Math.floor(player.ex / 20) + 1;
+                    if (nextLv > player.lv) {
+                        player.lv = nextLv;
+                        const hpPlus = player.isMom ? 15 : 8;
+                        const atkPlus = player.isMom ? 5 : 3;
+                        const defPlus = player.isMom ? 3 : 2;
+                        player.hp += hpPlus; player.attack += atkPlus; player.defence += defPlus;
+                        levelUpText = `\n\n🎵 おめでとう！ ${player.name}は レベル ${player.lv} になった！\n・最大ＨＰが ${hpPlus} あがった！\n・ＯＦが ${atkPlus} あがった！`;
+                    }
+                }
 
-                    player.hp += hpPlus;
-                    player.attack += atkPlus;
-                    player.defence += defPlus;
+                gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
 
-                    // MOTHER風の熱いレベルアップ演出テキスト
-                    levelUpText = `\n\n🎵 おめでとう！ ${player.name}は レベル ${player.lv} になった！\n・最大ＨＰが ${hpPlus} あがった！\n・ＯＦが ${atkPlus} あがった！\n・ＤＦが ${defPlus} あがった！`;
+                if (player.pos === 20) {
+                    // ゴール時
+                } else {
+                    gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
                 }
             }
+            
+            io.emit('state_update', gameState);
+        }
+    });
+
+    // 【追加：たたかうボタンが押されたときの処理】
+    socket.on('battle_attack', () => {
+        const bState = gameState.battleState;
+        if (bState.inBattle && bState.activePlayerId === socket.id) {
+            const player = gameState.players[socket.id];
+            // 先頭の敵を攻撃する
+            const enemy = bState.enemies[0];
+            
+            // プレイヤーの攻撃（ダメージ計算：攻撃力 - 防御(仮で一律2)）
+            const damageToEnemy = Math.max(1, player.attack - 2);
+            enemy.hp -= damageToEnemy;
+
+            let battleLog = `${player.name}の こうげき！\n${enemy.name}に ${damageToEnemy} の ダメージを与えた！\n`;
+
+            // 敵を倒したか判定
+            if (enemy.hp <= 0) {
+                battleLog += `▼ ${enemy.name}を たおした！\n`;
+                bState.enemies.shift(); // 倒した敵を配列から消す
+            }
+
+            // まだ敵が残っている場合、生き残っている先頭の敵から反撃を受ける
+            if (bState.enemies.length > 0) {
+                const activeEnemy = bState.enemies[0];
+                // 敵の攻撃（ダメージ計算：敵の攻撃力 - プレイヤーの防御）
+                const damageToPlayer = Math.max(1, activeEnemy.atk - Math.floor(player.defence / 2));
+                player.hp -= damageToPlayer;
+                battleLog += `▼ ${activeEnemy.name}の はんげき！\n${player.name}は ${damageToPlayer} の ダメージを受けた！\n`;
+                
+                // お母さんや家族が気絶しないようにHPが0以下になったら1で耐えるやさしさ設計
+                if (player.hp <= 0) player.hp = 1; 
+            }
+
+            // すべての敵を倒して勝利した場合
+            if (bState.enemies.length === 0) {
+                const bonusEx = 15;
+                player.ex += bonusEx;
+                battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が まもられた。`;
+                
+                // 戦闘を終了し、手番を次の人に回す
+                bState.inBattle = false;
+                bState.activePlayerId = null;
+                gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+            }
+
+            gameState.currentMessage = `💥 【戦闘中】残りの敵: ${bState.enemies.length}体\n\n${battleLog}`;
+            io.emit('state_update', gameState);
+        }
+    });
 
             // メッセージウィンドウに合体させて表示
             gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
