@@ -75,6 +75,7 @@ io.on('connection', (socket) => {
             const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
             
             // 【① socket.on('join_game', ...) 内の初期ステータスに items: [] を追加】
+            // 【① gameState の player の初期ステータスに expressMode: false を追加】
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
@@ -86,7 +87,8 @@ io.on('connection', (socket) => {
                 lv: 1,
                 ex: 0,
                 money: 100,
-                items: [] // ★追加：初期状態はアイテムを持っていません（最大5個）
+                items: [],
+                expressMode: false // ★追加：急行カードを使っているかどうかのフラグ
             };
             gameState.socketIds.push(socket.id);
             gameState.currentMessage = `${data.name}が 仲間になった！\n(LV:1 / HP:${gameState.players[socket.id].hp})`;
