@@ -63,19 +63,28 @@ io.on('connection', (socket) => {
     console.log('ユーザー接続:', socket.id);
 
     // 参加処理
+// 【server.js 内の socket.on('join_game', ...) の中身を以下に修正】
+
     socket.on('join_game', (data) => {
         if (!gameState.players[socket.id]) {
             const playerNum = Object.keys(gameState.players).length;
-            const isMom = data.name.includes("お母さん") || data.name.toLowerCase() === "mom";
+            const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
             
+            // 各プレイヤーにMOTHER風の初期ステータスを付与
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
                 color: COLORS[playerNum % COLORS.length],
-                isMom: isMom
+                isMom: isMom,
+                // --- 追加ステータス ---
+                hp: isMom ? 50 : 30,       // ママはちょっとタフに
+                attack: isMom ? 15 : 10,   // ママはちょっと強めに
+                defence: isMom ? 8 : 5,
+                lv: 1,
+                ex: 0
             };
             gameState.socketIds.push(socket.id);
-            gameState.currentMessage = `${data.name}が 仲間になった！`;
+            gameState.currentMessage = `${data.name}が 仲間になった！\n(LV:1 / HP:${gameState.players[socket.id].hp})`;
         }
         io.emit('state_update', gameState);
     });
