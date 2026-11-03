@@ -7,11 +7,6 @@ const io = require('socket.io')(http, {
 
 app.use(express.static('public'));
 
-// 各マスの思い出イベント（お母さんの人生の歴史）
-// 【server.js の上部を以下に差し替え・追加】
-
-// 【server.js の上部：マスの種類とイベントの定義】
-
 // マスの種類（normal: 通常, item: アイテム入手, shop: お店）
 const MASS_TYPES = {
     0: "normal",  1: "normal",  2: "item",    3: "normal",  4: "shop",
@@ -45,25 +40,18 @@ const MAP_EVENTS = {
     20: "ゴール！！！🎉 お母さん、お誕生日おめでとう！いつも本当にありがとう！最高の1年にしようね！"
 };
 
-// 【重要】server.js の中の「player.pos > 6」や「player.pos === 6」をすべて「20」に書き換えてください！
-// 例：
-// if (player.pos > 20) player.pos = 20;
-// if (player.pos === 20) { ... }
-// 【server.js のgameStateの定義部分にbattleStateを追加】
 let gameState = {
     players: {}, 
     turnIdx: 0,
     socketIds: [],
     currentMessage: "家族みんなが参加するのを待っている...",
-    // --- 追加：戦闘管理用ステータス ---
     battleState: {
         inBattle: false,
         activePlayerId: null,
-        enemies: [] // 出現した敵の配列 [{ name: "ちっちゃいハエ", hp: 15 }]
+        enemies: [] 
     }
 };
 
-// 敵キャラクターのプール
 const ENEMY_POOL = [
     { name: "おんちなオウム", hp: 20, atk: 6 },
     { name: "きまぐれなノラいぬ", hp: 25, atk: 8 },
@@ -71,29 +59,23 @@ const ENEMY_POOL = [
     { name: "ちっちゃいハエ", hp: 10, atk: 3 }
 ];
 
-// 4人分のコマの色
 const COLORS = ['#ff6b6b', '#4dadff', '#51cf66', '#fcc419'];
 
 io.on('connection', (socket) => {
     console.log('ユーザー接続:', socket.id);
 
-    // 参加処理
-// 【server.js 内の socket.on('join_game', ...) の中身を以下に修正】
-
     socket.on('join_game', (data) => {
         if (!gameState.players[socket.id]) {
             const playerNum = Object.keys(gameState.players).length;
-            const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
+            const isMom = data.name.includes("お母さん") || data.name.toLowerCase() === "mom";
             
-            // 各プレイヤーにMOTHER風の初期ステータスを付与
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
                 color: COLORS[playerNum % COLORS.length],
                 isMom: isMom,
-                // --- 追加ステータス ---
-                hp: isMom ? 50 : 30,       // ママはちょっとタフに
-                attack: isMom ? 15 : 10,   // ママはちょっと強めに
+                hp: isMom ? 50 : 30,       
+                attack: isMom ? 15 : 10,   
                 defence: isMom ? 8 : 5,
                 lv: 1,
                 ex: 0
@@ -104,17 +86,13 @@ io.on('connection', (socket) => {
         io.emit('state_update', gameState);
     });
 
-// 【server.js の socket.on('roll_dice', ...) の中身を以下に丸ごと差し替え】
-// 【io.on('connection', ...) 内の socket.on('roll_dice', ...) を以下に差し替え】
     socket.on('roll_dice', () => {
-        // 戦闘中でない場合のみサイコロが振れる
         if (!gameState.battleState.inBattle && gameState.socketIds[gameState.turnIdx] === socket.id) {
-            const dice = Math.floor(Math.random() * 3) + 1; // 1〜3進む
+            const dice = Math.floor(Math.random() * 3) + 1; 
             const player = gameState.players[socket.id];
             
             let encounteredEnemies = [];
             
-            // 【1マス進むごとに15%の確率でエンカウント判定（複数検知）】
             for (let m = 0; m < dice; m++) {
                 player.pos += 1;
                 if (player.pos > 20) {
@@ -122,11 +100,9 @@ io.on('connection', (socket) => {
                     break;
                 }
                 
-                // 15%の確率を引いたか（※スタートとゴール、SHOP・アイテムマスは安全地帯とする）
-                const massType = MASS_TYPES[player.pos];
-                if (massType === "normal" && player.pos !== 20) {
+                const massType = MASS_TYPES[player.pos] || "normal";
+                if (massType === "normal" && player.pos !== 20 && player.pos !== 0) {
                     if (Math.random() < 0.15) {
-                        // 敵プールからランダムに1体選んでコピー（HPを独立させるため）
                         const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
                         encounteredEnemies.push({
                             name: template.name,
@@ -138,10 +114,9 @@ io.on('connection', (socket) => {
                 }
             }
 
-            const massType = MASS_TYPES[player.pos];
+            const massType = MASS_TYPES[player.pos] || "normal";
             let eventText = MAP_EVENTS[player.pos] || "平穏な日常が過ぎていく。";
 
-            // 戦闘に遭遇した場合
             if (encounteredEnemies.length > 0) {
                 gameState.battleState.inBattle = true;
                 gameState.battleState.activePlayerId = socket.id;
@@ -150,7 +125,6 @@ io.on('connection', (socket) => {
                 let enemyNames = encounteredEnemies.map(e => `「${e.name}」`).join(' と ');
                 gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
             } else {
-                // 通常の移動処理（以前のロジックと同じ）
                 let levelUpText = "";
                 if (massType === "item") {
                     eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
@@ -185,45 +159,36 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 【追加：たたかうボタンが押されたときの処理】
     socket.on('battle_attack', () => {
         const bState = gameState.battleState;
         if (bState.inBattle && bState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            // 先頭の敵を攻撃する
-            const enemy = bState.enemies[0];
+            const enemy = bState.enemies[0]; // 先頭の敵
             
-            // プレイヤーの攻撃（ダメージ計算：攻撃力 - 防御(仮で一律2)）
             const damageToEnemy = Math.max(1, player.attack - 2);
             enemy.hp -= damageToEnemy;
 
             let battleLog = `${player.name}の こうげき！\n${enemy.name}に ${damageToEnemy} の ダメージを与えた！\n`;
 
-            // 敵を倒したか判定
             if (enemy.hp <= 0) {
                 battleLog += `▼ ${enemy.name}を たおした！\n`;
-                bState.enemies.shift(); // 倒した敵を配列から消す
+                bState.enemies.shift(); 
             }
 
-            // まだ敵が残っている場合、生き残っている先頭の敵から反撃を受ける
             if (bState.enemies.length > 0) {
                 const activeEnemy = bState.enemies[0];
-                // 敵の攻撃（ダメージ計算：敵の攻撃力 - プレイヤーの防御）
                 const damageToPlayer = Math.max(1, activeEnemy.atk - Math.floor(player.defence / 2));
                 player.hp -= damageToPlayer;
                 battleLog += `▼ ${activeEnemy.name}の はんげき！\n${player.name}は ${damageToPlayer} の ダメージを受けた！\n`;
                 
-                // お母さんや家族が気絶しないようにHPが0以下になったら1で耐えるやさしさ設計
                 if (player.hp <= 0) player.hp = 1; 
             }
 
-            // すべての敵を倒して勝利した場合
             if (bState.enemies.length === 0) {
                 const bonusEx = 15;
                 player.ex += bonusEx;
                 battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が まもられた。`;
                 
-                // 戦闘を終了し、手番を次の人に回す
                 bState.inBattle = false;
                 bState.activePlayerId = null;
                 gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
@@ -234,21 +199,6 @@ io.on('connection', (socket) => {
         }
     });
 
-            // メッセージウィンドウに合体させて表示
-            gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
-
-            // ゴール判定
-            if (player.pos === 20) {
-                // ゴール時は手番を動かさない
-            } else {
-                gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
-            }
-            
-            io.emit('state_update', gameState);
-        }
-    });
-    
-    // 切断処理
     socket.on('disconnect', () => {
         gameState.socketIds = gameState.socketIds.filter(id => id !== socket.id);
         delete gameState.players[socket.id];
