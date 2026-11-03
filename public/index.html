@@ -142,6 +142,11 @@
         function buyStatus(type) {
             socket.emit('shop_buy_status', type);
         }
+
+        // 【① public/index.html の buyStatus(type) のすぐ下にアイテム購入関数を追加】
+        function buyItem(itemName) {
+            socket.emit('shop_buy_item', itemName);
+        }
         
         function leaveShop() {
             socket.emit('shop_leave');
@@ -187,6 +192,10 @@
                         card.style.boxShadow = "0 0 8px rgba(255,255,255,0.8)";
                     }
                     
+                    // 【② 全員のステータスカード（card.innerHTML）を描画している部分にインベントリ（持ち物リスト）を追加】
+                    // アイテムリストを文字列にする（空なら「なし」）
+                    const itemListStr = p.items.length > 0 ? p.items.join(' , ') : "なし";
+
                     card.innerHTML = `
                         <div class="status-name" style="border-left: 4px solid ${p.color}; padding-left: 5px;">${p.name}</div>
                         <div>ＬＶ : ${p.lv}</div>
@@ -195,6 +204,7 @@
                         <div>ＤＦ : ${p.defence}</div>
                         <div>ＥＸ : ${p.ex}</div>
                         <div style="color: #fcc419; font-weight: bold;">💸＄ : ${p.money}</div>
+                        <div style="color: #aaa; font-size: 11px; margin-top: 5px; border-top: 1px dashed #444; padding-top: 3px;">🎒 : ${itemListStr}</div>
                     `;
                     statusArea.appendChild(card);
                 });
