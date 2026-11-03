@@ -7,54 +7,77 @@ const io = require('socket.io')(http, {
 
 app.use(express.static('public'));
 
-// マスの種類（normal: 通常, item: アイテム入手, shop: お店）
-const MASS_TYPES = {
-    0: "normal",  1: "normal",  2: "item",    3: "normal",  4: "shop",
-    5: "normal",  6: "normal",  7: "item",    8: "normal",  9: "normal",
-    10: "shop",   11: "normal", 12: "item",   13: "normal", 14: "normal",
-    15: "normal", 16: "shop",   17: "normal", 18: "normal", 19: "item",
-    20: "normal"
-};
+// 50マスの種類定義（ normal:通常, item:アイテム, shop:お店 ）
+const MASS_TYPES = {};
+for (let i = 0; i <= 50; i++) {
+    if ([5, 15, 25, 35, 45].includes(i)) MASS_TYPES[i] = "shop";
+    else if ([2, 10, 18, 28, 38, 48].includes(i)) MASS_TYPES[i] = "item";
+    else MASS_TYPES[i] = "normal";
+}
 
+// 50マスのイベント文章（11/8までに自由にお母さんの思い出に変えてね！）
 const MAP_EVENTS = {
     0: "スタート！お母さんの人生すごろくが はじまった！",
-    1: "【生誕】お母さんがこの世に誕生！世界がほんのり温かくなった。",
+    1: "【誕生】お母さんがこの世に誕生！世界がほんのり温かくなった。",
     2: "【アイテムマス】不思議なプレゼント箱が 落ちている！",
-    3: "【学生時代】部活に青春を捧げた日々。テストの点数は「ヒミツ」らしい。",
-    4: "【SHOPマス】『どせいさんショップ』に やってきた！",
-    5: "【プロポーズ】お父さんの一世一代のプロポーズ！お母さんは快諾した（ことになっている）。",
-    6: "【結婚式】人生の晴れ舞台。ドレス姿のお母さんは世界で一番綺麗だった！",
-    7: "【アイテムマス】お母さんの優しさが カタチになって現れた！",
-    8: "【第一子誕生】命がけで子どもを産んでくれた日。お母さん、本当にありがとう！",
-    9: "【夜泣きバトル】毎晩の夜泣きをあやし続けた。お母さんの精神力が 100 上がった！",
-    10: "【SHOPマス】『桃太郎ランド売店』に やってきた！",
-    11: "【反抗期をスルー】子どもの反抗期を、お母さんはマシンガントークで完全論破した！",
-    12: "【アイテムマス】毎日作ってくれた美味しいお弁当の 匂いがする箱を発見！",
-    13: "【パート開始】新しい仕事を始めたお母さん。職場でも持ち前の明るさでムードメーカーに！",
-    14: "【趣味の開花】お母さんが新しい趣味に目覚めた！日々の生活が潤っていく。",
-    15: "【大ピンチ】お父さんがおやつを勝手に食べてお母さんが激怒！お父さんは3日間平謝りした。",
-    16: "【SHOPマス】『ハピネスショップ』に やってきた！",
-    17: "【最近のニュース】スマホの操作に慣れてきて、家族LINEにスタンプを連打するお母さん。",
-    18: "【誕生日の前夜】家族みんながソワソワしながら、このゲームを隠れて作っていた形跡を発見！",
-    19: "【アイテムマス】ゴールはもう目の前！最後のエネルギーが 湧いてくる！",
-    20: "ゴール！！！🎉 お母さん、お誕生日おめでとう！いつも本当にありがとう！最高の1年にしようね！"
+    3: "【幼少期】泥遊びが大好きだった少女時代。伝説がここから始まる。",
+    4: "平穏な日常。お母さんの笑顔が家族を明るくする。",
+    5: "【SHOPマス】『どせいさんショップ』に やってきた！",
+    6: "【学生時代】部活に青春を捧げた日々。テストの点数は秘密らしい。",
+    7: "【お父さんとの出会い】運命の出会い。第一印象は「特に記憶にない」とお母さん。",
+    8: "【プロポーズ】お父さんの一世一代のプロポーズ！お母さんは快諾した（ことになっている）。",
+    9: "【結婚式】人生の晴れ舞台。ドレス姿のお母さんは世界で一番綺麗だった！",
+    10: "【アイテムマス】お母さんの優しさが カタチになって現れた！",
+    11: "【新居へ移動】慣れない土地での新婚生活。料理のレパートリーが爆発的に増えた！",
+    12: "【第一子誕生】命がけで子どもを産んでくれた日。お母さん、本当にありがとう！",
+    13: "【夜泣きバトル】毎晩の夜泣きをあやし続けた。お母さんの精神力が 100 上がった！",
+    14: "家族で行った初めての温泉旅行。お母さんがカニを剥くスピードが神がかり始める。",
+    15: "【SHOPマス】『桃太郎ランド売店』に やってきた！",
+    16: "子どもの反抗期を、お母さんはマシンガントークで完全論破した！",
+    17: "毎日作ってくれた美味しいお弁当。卵焼きの味は一生忘れません。",
+    18: "【アイテムマス】思い出の詰まった古いアルバムを発見！",
+    19: "新しい仕事を始めたお母さん。職場でも持ち前の明るさでムードメーカーに！",
+    20: "お母さんが新しい趣味に目覚めた！日々の生活が潤っていく。",
+    // --- 21〜49マス（50マス用の新しいイベント） ---
+    21: "お父さんがおやつを勝手に食べてお母さんが激怒！お父さんは3日間平謝りした。",
+    22: "家族みんなで映画館へ行った思い出。ポップコーンを食べすぎた。",
+    23: "お母さんの得意料理（ハンバーグ）の夕食！みんなのテンションが上がった！",
+    24: "ペットが家族になった日。お母さんが一番メロメロになっている。",
+    25: "【SHOPマス】『ハピネスショップ』に やってきた！",
+    26: "スマホの操作に慣れてきて、家族LINEにスタンプを連打するお母さん。",
+    27: "断捨離を始めたお母さん。お父さんの古いコレクションがコッソリ処分されかける大ピンチ！",
+    28: "【アイテムマス】引き出しの奥から懐かしい家族写真が出てきた！",
+    29: "お母さんが作った特製ケーキが美味しすぎるイベントが発生！",
+    30: "これからの家族の未来について、夜遅くまで語り合った思い出の夜。",
+    31: "お母さんのパートのご褒美で、ちょっと良いお寿司を食べに行った！",
+    32: "家族が風邪をひいた時、お母さんが一晩中看病してくれた。優しさに感謝！",
+    33: "お母さんがお気に入りの服を見つけてご機嫌な一日。",
+    34: "家族でドライブ旅行！助手席のお母さんの選曲が渋くて盛り上がる。",
+    35: "【SHOPマス】『スカイショップ』に やってきた！",
+    36: "お母さんがバッサリ髪を切ってイメチェン！家族みんなで大絶賛した。",
+    37: "コタツから抜け出せない冬の日の思い出。お母さんがみかんを剥いてくれた。",
+    38: "【アイテムマス】ゴールへのエネルギーが湧いてくる不思議な木の実を発見！",
+    39: "お父さんがお皿洗いを手伝って、お母さんがニコニコしている平穏な夜。",
+    40: "子どもが自立していく寂しさと、成長を喜ぶお母さんの温かい眼差し。",
+    41: "家族みんなでカラオケ大会！お母さんの十八番が炸裂した！",
+    42: "お母さんが「美味しいパン屋さん」を見つけて毎日ハッピーな週。",
+    43: "お母さんの誕生日がもうすぐだと気づき、家族がソワソワし始めた形跡を発見！",
+    44: "お母さんへの感謝の気持ちが、家族の心の中で限界突破するイベント発生！",
+    45: "【SHOPマス】『最後のひみつ基地売店』に やってきた！",
+    46: "誕生日パーティーの準備が裏で着々と進んでいるのを感じるお母さん。",
+    47: "ゴールはもう目の前！家族全員がサイコロを握る手に力を込める。",
+    48: "【アイテムマス】お誕生日会場への招待状がカバンに飛び込んできた！",
+    49: "あと1マス！みんなでお母さんへの感謝のコールを叫ぶ準備をしよう！",
+    50: "ゴール！！！🎉 お母さん、お誕生日おめでとう！いつも本当にありがとう！最高の1年にしようね！"
 };
 
 let gameState = {
     players: {}, 
     turnIdx: 0,
     socketIds: [],
-    currentMessage: "みんなが参加するのを待っている...",
-    battleState: {
-        inBattle: false,
-        activePlayerId: null,
-        enemies: [] 
-    },
-    shopState: {
-        inShop: false,
-        activePlayerId: null,
-        mode: "menu"
-    }
+    currentMessage: "家族みんなが参加するのを待っている...",
+    battleState: { inBattle: false, activePlayerId: null, enemies: [] },
+    shopState: { inShop: false, activePlayerId: null, mode: "menu" }
 };
 
 const ENEMY_POOL = [
@@ -72,23 +95,22 @@ io.on('connection', (socket) => {
     socket.on('join_game', (data) => {
         if (!gameState.players[socket.id]) {
             const playerNum = Object.keys(gameState.players).length;
-            const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
+            const isMom = data.name.includes("お母さん") || data.name.toLowerCase() === "mom";
             
-            // 【① socket.on('join_game', ...) 内の初期ステータスに items: [] を追加】
-            // 【① gameState の player の初期ステータスに expressMode: false を追加】
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
                 color: COLORS[playerNum % COLORS.length],
                 isMom: isMom,
                 hp: isMom ? 50 : 30,       
+                maxHp: isMom ? 50 : 30, // 最大HPを記録
                 attack: isMom ? 15 : 10,   
                 defence: isMom ? 8 : 5,
                 lv: 1,
                 ex: 0,
                 money: 100,
                 items: [],
-                expressMode: false // ★追加：急行カードを使っているかどうかのフラグ
+                expressMode: false 
             };
             gameState.socketIds.push(socket.id);
             gameState.currentMessage = `${data.name}が 仲間になった！\n(LV:1 / HP:${gameState.players[socket.id].hp})`;
@@ -96,30 +118,26 @@ io.on('connection', (socket) => {
         io.emit('state_update', gameState);
     });
 
-    // 【② socket.on('roll_dice', ...) 内のサイコロのランダム数決定ロジックを以下に修正】
     socket.on('roll_dice', () => {
         if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const player = gameState.players[socket.id];
             
-            // ★修正：急行モードなら1〜6進む、通常なら1〜3進む
             let maxDice = player.expressMode ? 6 : 3;
             const dice = Math.floor(Math.random() * maxDice) + 1; 
             
-            // サイコロを振ったら急行モードは解除する
             if (player.expressMode) player.expressMode = false;
 
             let encounteredEnemies = [];
-            // (以下、for (let m = 0; m < dice; m++) などの移動処理はそのまま)
             
             for (let m = 0; m < dice; m++) {
                 player.pos += 1;
-                if (player.pos > 20) {
-                    player.pos = 20;
+                if (player.pos > 50) { // ★50マスに拡張
+                    player.pos = 50;
                     break;
                 }
                 
                 const massType = MASS_TYPES[player.pos] || "normal";
-                if (massType === "normal" && player.pos !== 20 && player.pos !== 0) {
+                if (massType === "normal" && player.pos !== 50 && player.pos !== 0) {
                     if (Math.random() < 0.15) {
                         const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
                         encounteredEnemies.push({
@@ -162,15 +180,15 @@ io.on('connection', (socket) => {
                         const hpPlus = player.isMom ? 15 : 8;
                         const atkPlus = player.isMom ? 5 : 3;
                         const defPlus = player.isMom ? 3 : 2;
-                        player.hp += hpPlus; player.attack += atkPlus; player.defence += defPlus;
+                        player.hp += hpPlus; player.maxHp += hpPlus; player.attack += atkPlus; player.defence += defPlus;
                         levelUpText = `\n\n🎵 おめでとう！ ${player.name}は レベル ${player.lv} になった！\n・最大ＨＰが ${hpPlus} あがった！\n・ＯＦが ${atkPlus} あがった！`;
                     }
                 }
 
                 gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
 
-                if (player.pos === 20 || massType === "shop") {
-                    // ゴール時、またはSHOPマス到達時はここでは手番を回さない
+                if (player.pos === 50 || massType === "shop") {
+                    // ゴール、またはSHOP到達時は手番を回さない
                 } else {
                     gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
                 }
@@ -203,33 +221,53 @@ io.on('connection', (socket) => {
                 const damageToPlayer = Math.max(1, activeEnemy.atk - Math.floor(player.defence / 2));
                 player.hp -= damageToPlayer;
                 battleLog += `▼ ${activeEnemy.name}の はんげき！\n${player.name}は ${damageToPlayer} の ダメージを受けた！\n`;
-                
-                if (player.hp <= 0) player.hp = 1; 
             }
 
-            if (bState.enemies.length === 0) {
+            // ★修正：プレイヤーが死んでしまった（HPが0以下になった）時のペナルティ処理
+            if (player.hp <= 0) {
+                const lostMoney = Math.floor(player.money / 2);
+                player.money -= lostMoney; // お金半分没収
+                player.hp = Math.floor(player.maxHp / 2); // HP半分で復活
+                player.pos = 0; // スタート地点へ強制送還
+                
+                battleLog += `\n☠️ あーーっと！！ ${player.name}は ちからつきてしまった！\n▶ ペナルティ：お小遣いが ${lostMoney}＄ 減ってしまった！\n▶ お母さんの実家（スタート地点）へ 搬送されました…`;
+                
+                // 戦闘を強制終了し、次の人のターンへ
+                bState.inBattle = false;
+                bState.activePlayerId = null;
+                gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+            }
+            // すべての敵を倒して勝利した場合
+            else if (bState.enemies.length === 0) {
                 const bonusEx = 15;
                 player.ex += bonusEx;
-                battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が 守られた。`;
+                battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が まもられた。`;
                 
                 bState.inBattle = false;
                 bState.activePlayerId = null;
                 gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
             }
 
-            gameState.currentMessage = `💥 【戦闘中】残りの敵: ${bState.enemies.length}体\n\n${battleLog}`;
+            gameState.currentMessage = bState.inBattle 
+                ? `💥 【戦闘中】残りの敵: ${bState.enemies.length}体\n\n${battleLog}`
+                : `💀 バトル終了\n\n${battleLog}`;
+                
             io.emit('state_update', gameState);
         }
     });
+    
+      // ==========================================
+    // 🛒 SHOP（お買い物）関連の通信イベント
+    // ==========================================
 
-    // 【② 既存の socket.on('shop_select_menu', ...) の中身を「アイテム購入画面」に対応させる】
+    // SHOPメニューの選択 (ステータス画面 または アイテム画面へ切り替え)
     socket.on('shop_select_menu', (mode) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             if (mode === 'status') {
                 sState.mode = "status";
                 gameState.currentMessage = `🛒 【ショップ：ステータス強化】\nどれを 購入しますか？（それぞれ 50＄）`;
-            } else if (mode === 'item') { // ★追加
+            } else if (mode === 'item') { 
                 sState.mode = "item";
                 gameState.currentMessage = `🛒 【ショップ：アイテム購入】\nどれを 購入しますか？（持てるのは最大5つまで）`;
             }
@@ -237,7 +275,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // SHOPメニューの選択 (ステータス購入画面へ切り替え)
+    // ステータスを実際に購入する処理
     socket.on('shop_buy_status', (type) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
@@ -251,6 +289,7 @@ io.on('connection', (socket) => {
                 if (type === 'hp') {
                     const plus = player.isMom ? 20 : 10;
                     player.hp += plus;
+                    player.maxHp += plus; // 最大HPも一緒に増やす
                     boostText = `最大ＨＰが ${plus} あがった！`;
                 } else if (type === 'atk') {
                     const plus = player.isMom ? 6 : 3;
@@ -269,25 +308,21 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-    
-    // 【③ socket.on('shop_buy_status', ...) のすぐ下に、以下の「アイテム購入処理」を丸ごと追加】
+
+    // アイテムを実際に購入する処理
     socket.on('shop_buy_item', (itemName) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            
-            // アイテムの価格設定
-            const ITEM_PRICES = { "ちからのバット": 50, "お母さんのおむすび": 30, "急行カード": 40 };
+            const ITEM_PRICES = { "ち力のバット": 50, "お母さんのおむすび": 30, "急行カード": 40 };
             const cost = ITEM_PRICES[itemName];
 
-            // 1. 所持数チェック（5個まで）
             if (player.items.length >= 5) {
                 gameState.currentMessage = `🛒 🎒 アイテムが いっぱいです！\nこれ以上 持つことは できません。`;
             }
-            // 2. 所持金チェック
             else if (player.money >= cost) {
                 player.money -= cost;
-                player.items.push(itemName); // インベントリに追加
+                player.items.push(itemName); 
                 gameState.currentMessage = `🛒 ありがとうございました！\n【${itemName}】を 🎒バッグに 入れた。\nまだお買い物しますか？`;
             } else {
                 gameState.currentMessage = `🛒 💸 お金が 足りないようです！\n（必要なお金: ${cost}＄ / 所持金: ${player.money}＄）`;
@@ -295,7 +330,8 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-    
+
+    // お店を出る処理（買い物を終了して次の人のターンへ）
     socket.on('shop_leave', () => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
@@ -310,23 +346,24 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-    
-    // 【③ io.on('connection', ...) 内の最後（disconnect のすぐ上あたり）に「アイテム使用処理」を追加】
+
+    // ==========================================
+    // 🎒 アイテム使用関連の通信イベント
+    // ==========================================
     socket.on('use_item', (itemIdx) => {
-        // 自分のターン、かつ戦闘中や買い物中でない場合のみ使用可能
         if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const player = gameState.players[socket.id];
             
-            // 指定されたインデックスのアイテム名を取得して配列から削除
             if (player.items && player.items[itemIdx]) {
-                const itemName = player.items.splice(itemIdx, 1)[0];
+                const itemName = player.items.splice(itemIdx, 1)[0]; // 選択されたアイテムを取り出す
                 let useLog = `🎒 ${player.name}は 【${itemName}】を 使った！\n\n`;
 
-                if (itemName === "ちからのバット") {
+                if (itemName === "ち力のバット") {
                     player.attack += 5;
                     useLog += `▶ 攻撃への じしんが みなぎってきた！ ＯＦが 5 あがった！`;
                 } else if (itemName === "お母さんのおむすび") {
                     player.hp += 30;
+                    if (player.hp > player.maxHp) player.hp = player.maxHp; // 最大HPを超えない
                     useLog += `▶ 懐かしい味がした！ ＨＰが 30 回復した！`;
                 } else if (itemName === "急行カード") {
                     player.expressMode = true;
@@ -338,7 +375,10 @@ io.on('connection', (socket) => {
             }
         }
     });
-    
+
+    // ==========================================
+    // 🔌 切断処理 と サーバー起動
+    // ==========================================
     socket.on('disconnect', () => {
         gameState.socketIds = gameState.socketIds.filter(id => id !== socket.id);
         delete gameState.players[socket.id];
