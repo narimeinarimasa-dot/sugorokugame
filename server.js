@@ -336,7 +336,7 @@ io.on('connection', (socket) => {
             
             // 価格設定（新しいアイテムは高額！）
             const ITEM_PRICES = { 
-                "ち力のバット": 30, "お母さんのおむすび": 20, "急行カード": 40,
+                "力のバット": 30, "お母さんのおむすび": 20, "急行カード": 40,
                 "テレポートカード": 120, "ぶっとびカード": 150, "おうじょのえーる": 200
             };
             const cost = ITEM_PRICES[itemName];
@@ -382,7 +382,7 @@ io.on('connection', (socket) => {
                 const itemName = player.items.splice(itemIdx, 1);
                 let useLog = `🎒 ${player.name}は 【${itemName}】を 使った！\n\n`;
 
-                if (itemName === "ち力のバット") {
+                if (itemName === "力のバット") {
                     player.attack += 5;
                     useLog += `▶ 攻撃への じしんが みなぎってきた！ ＯＦが 5 あがった！`;
                 } else if (itemName === "お母さんのおむすび") {
@@ -427,7 +427,7 @@ io.on('connection', (socket) => {
                     player.hp += 10;
                     player.attack += 10;
                     player.defence += 10;
-                    useLog += `▶ 女神（お母さん）の 祝福を うけた！\n全ステータス（ＨＰ・ＯＦ・ＤＦ）が 永久に 【 10 】 アップした！！`;
+                    useLog += `▶ 女神の 祝福を うけた！\n全ステータス（ＨＰ・ＯＦ・ＤＦ）が 永久に 【 10 】 アップした！！`;
                 }
 
                 gameState.currentMessage = useLog;
