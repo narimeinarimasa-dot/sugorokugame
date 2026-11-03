@@ -151,6 +151,7 @@
                         card.style.boxShadow = "0 0 8px rgba(255,255,255,0.8)";
                     }
                     
+                    // 【public/index.html 内の statusArea を描き直している部分（ card.innerHTML ）を以下に修正】
                     card.innerHTML = `
                         <div class="status-name" style="border-left: 4px solid ${p.color}; padding-left: 5px;">${p.name}</div>
                         <div>ＬＶ : ${p.lv}</div>
@@ -158,6 +159,7 @@
                         <div>ＯＦ : ${p.attack}</div>
                         <div>ＤＦ : ${p.defence}</div>
                         <div>ＥＸ : ${p.ex}</div>
+                        <div style="color: #fcc419; font-weight: bold;">💸＄ : ${p.money}</div>
                     `;
                     statusArea.appendChild(card);
                 });
