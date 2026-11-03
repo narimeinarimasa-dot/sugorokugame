@@ -310,7 +310,35 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
+    
+    // 【③ io.on('connection', ...) 内の最後（disconnect のすぐ上あたり）に「アイテム使用処理」を追加】
+    socket.on('use_item', (itemIdx) => {
+        // 自分のターン、かつ戦闘中や買い物中でない場合のみ使用可能
+        if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
+            const player = gameState.players[socket.id];
+            
+            // 指定されたインデックスのアイテム名を取得して配列から削除
+            if (player.items && player.items[itemIdx]) {
+                const itemName = player.items.splice(itemIdx, 1)[0];
+                let useLog = `🎒 ${player.name}は 【${itemName}】を 使った！\n\n`;
 
+                if (itemName === "ちからのバット") {
+                    player.attack += 5;
+                    useLog += `▶ 攻撃への じしんが みなぎってきた！ ＯＦが 5 あがった！`;
+                } else if (itemName === "お母さんのおむすび") {
+                    player.hp += 30;
+                    useLog += `▶ 懐かしい味がした！ ＨＰが 30 回復した！`;
+                } else if (itemName === "急行カード") {
+                    player.expressMode = true;
+                    useLog += `▶ 体が 軽くなった！ 次に振るサイコロが 【最大６マス】 にパワーアップした！`;
+                }
+
+                gameState.currentMessage = useLog;
+                io.emit('state_update', gameState);
+            }
+        }
+    });
+    
     socket.on('disconnect', () => {
         gameState.socketIds = gameState.socketIds.filter(id => id !== socket.id);
         delete gameState.players[socket.id];
