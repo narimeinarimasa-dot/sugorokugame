@@ -259,7 +259,33 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
+    
+    // 【③ socket.on('shop_buy_status', ...) のすぐ下に、以下の「アイテム購入処理」を丸ごと追加】
+    socket.on('shop_buy_item', (itemName) => {
+        const sState = gameState.shopState;
+        if (sState.inShop && sState.activePlayerId === socket.id) {
+            const player = gameState.players[socket.id];
+            
+            // アイテムの価格設定
+            const ITEM_PRICES = { "ちからのバット": 50, "お母さんのおむすび": 30, "急行カード": 40 };
+            const cost = ITEM_PRICES[itemName];
 
+            // 1. 所持数チェック（5個まで）
+            if (player.items.length >= 5) {
+                gameState.currentMessage = `🛒 🎒 アイテムが いっぱいです！\nこれ以上 持つことは できません。`;
+            }
+            // 2. 所持金チェック
+            else if (player.money >= cost) {
+                player.money -= cost;
+                player.items.push(itemName); // インベントリに追加
+                gameState.currentMessage = `🛒 ありがとうございました！\n【${itemName}】を 🎒バッグに 入れた。\nまだお買い物しますか？`;
+            } else {
+                gameState.currentMessage = `🛒 💸 お金が 足りないようです！\n（必要なお金: ${cost}＄ / 所持金: ${player.money}＄）`;
+            }
+            io.emit('state_update', gameState);
+        }
+    });
+    
     socket.on('shop_leave', () => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
