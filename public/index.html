@@ -11,6 +11,25 @@
         .btn { background: #000; color: #fff; border: 3px solid #fff; padding: 12px 24px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 90%; max-width: 400px; margin: 10px 0; }
         .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; }
         .btn:active:not(:disabled) { background: #fff; color: #000; }
+        /* 【public/index.html の <style> 内に追加】 */
+.status-card {
+    border: 2px solid #fff;
+    background: #000;
+    padding: 10px;
+    border-radius: 5px;
+    width: 43%; /* スマホで2列に並ぶように調整 */
+    box-sizing: border-box;
+    font-size: 13px;
+    text-align: left;
+    line-height: 1.4;
+}
+.status-name {
+    font-weight: bold;
+    color: #fcc419; /* 名前を金色っぽく */
+    border-bottom: 1px solid #fff;
+    padding-bottom: 3px;
+    margin-bottom: 5px;
+}
         
         /* 縦並びのすごろくマップ（スマホで見やすい縦スクロール型） */
         .map-container { display: flex; flex-direction: column; align-items: center; margin: 25px auto; width: 90%; gap: 15px; }
@@ -54,13 +73,7 @@
         <div class="window" id="msgWindow">...</div>
 
         <center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
-<!-- 【public/index.html の rollBtn のすぐ下あたりに追加】 -->
-<center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
 
-<!-- ここから追加：全員のステータス表示エリア -->
-<div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;">
-    <!-- ここにJavaScriptで全員のステータスカードが自動生成されます -->
-</div>
        <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
         <div class="map-container" id="dynamicMap"></div>
     </div>
@@ -157,6 +170,34 @@
                 const container = document.getElementById(`p${p.pos}`);
                 if(container) container.appendChild(piece);
             });
+
+         // --- ここから追加：全員のステータス表示を更新 ---
+            const statusArea = document.getElementById('statusArea');
+            if (statusArea) {
+                statusArea.innerHTML = ''; // 一旦クリア
+
+                Object.keys(state.players).forEach(id => {
+                    const p = state.players[id];
+                    const card = document.createElement('div');
+                    card.className = 'status-card';
+                    
+                    // 自分のカードにはうっすら白い影をつける
+                    if(id === socket.id) {
+                        card.style.boxShadow = "0 0 8px rgba(255,255,255,0.8)";
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="status-name" style="border-left: 4px solid ${p.color}; padding-left: 5px;">${p.name}</div>
+                        <div>ＬＶ : ${p.lv}</div>
+                        <div>ＨＰ : ${p.hp}</div>
+                        <div>ＯＦ : ${p.attack}</div>
+                        <div>ＤＦ : ${p.defence}</div>
+                        <div>ＥＸ : ${p.ex}</div>
+                    `;
+                    statusArea.appendChild(card);
+                });
+            }
+            // --- ここまで追加 ---
 
             // ボタンの手番制御
             const currentTurnId = state.socketIds[state.turnIdx];
