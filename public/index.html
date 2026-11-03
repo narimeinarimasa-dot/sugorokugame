@@ -54,7 +54,13 @@
         <div class="window" id="msgWindow">...</div>
 
         <center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
+<!-- 【public/index.html の rollBtn のすぐ下あたりに追加】 -->
+<center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
 
+<!-- ここから追加：全員のステータス表示エリア -->
+<div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;">
+    <!-- ここにJavaScriptで全員のステータスカードが自動生成されます -->
+</div>
        <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
         <div class="map-container" id="dynamicMap"></div>
     </div>
