@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOTHER鉄道 - N</title>
+    <title>MOTHER鉄道 - お母さん誕生日おめでとう</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Courier New', Courier, monospace; text-align: center; padding: 10px; margin: 0; }
         h1 { font-size: 24px; margin: 15px 0; color: #fcc419; text-shadow: 2px 2px #cc1111; }
@@ -11,50 +11,19 @@
         .btn { background: #000; color: #fff; border: 3px solid #fff; padding: 12px 24px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 90%; max-width: 400px; margin: 10px 0; }
         .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; }
         .btn:active:not(:disabled) { background: #fff; color: #000; }
-        /* 【public/index.html の <style> 内に追加】 */
-.status-card {
-    border: 2px solid #fff;
-    background: #000;
-    padding: 10px;
-    border-radius: 5px;
-    width: 43%; /* スマホで2列に並ぶように調整 */
-    box-sizing: border-box;
-    font-size: 13px;
-    text-align: left;
-    line-height: 1.4;
-}
-.status-name {
-    font-weight: bold;
-    color: #fcc419; /* 名前を金色っぽく */
-    border-bottom: 1px solid #fff;
-    padding-bottom: 3px;
-    margin-bottom: 5px;
-}
         
-        /* 縦並びのすごろくマップ（スマホで見やすい縦スクロール型） */
+        #setup { text-align: center; }
+        #setup input { display: block; margin: 0 auto 15px auto; width: 80%; padding: 12px; font-size: 16px; background: #000; color: #fff; border: 2px solid #fff; border-radius: 5px; text-align: center; }
+
+        .status-card { border: 2px solid #fff; background: #000; padding: 10px; border-radius: 5px; width: 43%; box-sizing: border-box; font-size: 13px; text-align: left; line-height: 1.4; }
+        .status-name { font-weight: bold; color: #fcc419; border-bottom: 1px solid #fff; padding-bottom: 3px; margin-bottom: 5px; }
+
         .map-container { display: flex; flex-direction: column; align-items: center; margin: 25px auto; width: 90%; gap: 15px; }
         .mass { width: 85%; height: 60px; border: 3px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: #111; box-sizing: border-box; position: relative; }
         .mass-title { font-weight: bold; font-size: 14px; }
         .pieces-area { display: flex; gap: 6px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 5px; min-width: 60px; justify-content: center; }
         .piece { width: 16px; height: 16px; border-radius: 50%; display: inline-block; position: relative; }
         .piece-name { font-size: 8px; color: #fff; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-        
-        /* 参加画面全体を中央揃えにする */
-#setup { text-align: center; }
-
-/* 入力欄を真ん中に配置する */
-#setup input { 
-    display: block; 
-    margin: 0 auto 15px auto; 
-    width: 80%; 
-    padding: 12px; 
-    font-size: 16px; 
-    background: #000; 
-    color: #fff; 
-    border: 2px solid #fff; 
-    border-radius: 5px; 
-    text-align: center; 
-}
     </style>
 </head>
 <body>
@@ -64,28 +33,21 @@
     <!-- 参加画面 -->
     <div id="setup" class="window">
         <p>あなたの 名前を おしえてください。</p>
-        <input type="text" id="nameInput" placeholder="田中,tanaka,など">
+        <input type="text" id="nameInput" placeholder="お母さん、〇〇、など">
         <center><button class="btn" onclick="joinGame()">ゲームを はじめる</button></center>
     </div>
 
     <!-- ゲーム画面 -->
     <div id="gameRoom" style="display: none;">
-        <!-- メッセージウィンドウ -->
-        <div class="window" id="msgWindow">
-            待機中...家族全員が参加したらサイコロを振ってね！
-        </div>
+        <div class="window" id="msgWindow">待機中...家族全員が参加したらサイコロを振ってね！</div>
 
-        <!-- サイコロボタン -->
-<!-- 【public/index.html の rollBtn のすぐ下に追加】 -->
-<center>
-    <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
-    <!-- 追加：たたかうボタン（初期状態は非表示） -->
-    <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
-</center>
-        <!-- ★全員のステータス表示エリア（ここがボタンの下に確実に残るようにします） -->
+        <center>
+            <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
+            <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
+        </center>
+
         <div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;"></div>
 
-        <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
         <div class="map-container" id="dynamicMap"></div>
     </div>
 
@@ -93,7 +55,6 @@
     <script>
         const socket = io();
 
-        // 20マスのタイトル定義
         const massTitles = {
             0: "🏁 0: スタート",  1: "👶 1: お母さん誕生", 2: "🎁 2: アイテムマス",
             3: "🏫 3: 学生時代",   4: "🛒 4: SHOPマス",     5: "💍 5: プロポーズ",
@@ -104,13 +65,11 @@
             18: "🤫 18: 誕生日前のソワソワ", 19: "🎁 19: アイテムマス", 20: "🎉 20: ゴール！"
         };
 
-        // マスの種類定義
         const massTypes = {
             2: "item", 7: "item", 12: "item", 19: "item",
             4: "shop", 10: "shop", 16: "shop"
         };
 
-        // 【重要】20マスの自動生成は、ゲーム起動時に「1回だけ」実行する（関数の外に置く）
         const mapContainer = document.getElementById('dynamicMap');
         if (mapContainer && mapContainer.children.length === 0) {
             for (let i = 20; i >= 0; i--) {
@@ -144,26 +103,22 @@
             document.getElementById('gameRoom').style.display = 'block';
         }
 
-        // 【public/index.html の script タグ内の joinGame や rollDice の付近に追加】
-        function attackEnemy() {
-            socket.emit('battle_attack');
-        }
-
         function rollDice() {
             socket.emit('roll_dice');
         }
 
+        function attackEnemy() {
+            socket.emit('battle_attack');
+        }
+
         socket.on('state_update', (state) => {
-            // メッセージウィンドウの更新
             document.getElementById('msgWindow').innerText = state.currentMessage;
 
-            // すべてのマス（0〜20）のコマエリアを一度クリア
             for(let i = 0; i <= 20; i++) {
                 const container = document.getElementById(`p${i}`);
                 if(container) container.innerHTML = '';
             }
 
-            // 全プレイヤーのコマを再配置
             Object.keys(state.players).forEach(id => {
                 const p = state.players[id];
                 const piece = document.createElement('div');
@@ -183,7 +138,6 @@
                 if(container) container.appendChild(piece);
             });
 
-            // 全員のステータス表示を更新（消えないようにここで毎回きれいに描き直す）
             const statusArea = document.getElementById('statusArea');
             if (statusArea) {
                 statusArea.innerHTML = ''; 
@@ -209,31 +163,26 @@
                 });
             }
 
-            // ボタンの手番制御
-            // 【socket.on('state_update', ...) の最後にある「ボタンの手番制御」の部分を以下に丸ごと差し替え】
             const currentTurnId = state.socketIds[state.turnIdx];
             const rollBtn = document.getElementById('rollBtn');
             const attackBtn = document.getElementById('attackBtn');
             const bState = state.battleState;
 
-            // 1. 戦闘中の場合
             if (bState && bState.inBattle) {
-                rollBtn.style.display = 'none'; // サイコロを隠す
-                attackBtn.style.display = 'block'; // たたかうボタンを出す
+                rollBtn.style.display = 'none'; 
+                attackBtn.style.display = 'block'; 
 
                 if (bState.activePlayerId === socket.id) {
                     attackBtn.disabled = false;
-                    attackBtn.innerText = `⚔️ あなたが戦闘中！ たたかう (${bState.enemies.length}体残る)`;
+                    attackBtn.innerText = `⚔️ たたかう (${bState.enemies.length}体残る)`;
                 } else {
                     attackBtn.disabled = true;
                     const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
-                    attackBtn.innerText = `⚔️ ${pName}が 戦闘しています...`;
+                    attackBtn.innerText = `⚔️ ${pName}が 戦闘中...`;
                 }
-            } 
-            // 2. 通常移動中の場合
-            else {
-                rollBtn.style.display = 'block'; // サイコロを出す
-                attackBtn.style.display = 'none'; // たたかうボタンを隠す
+            } else {
+                rollBtn.style.display = 'block'; 
+                attackBtn.style.display = 'none'; 
 
                 if (currentTurnId === socket.id) {
                     rollBtn.disabled = false;
