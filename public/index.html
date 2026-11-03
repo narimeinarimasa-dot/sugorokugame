@@ -40,7 +40,7 @@
     <!-- ゲーム画面 -->
     <div id="gameRoom" style="display: none;">
         <!-- 【public/index.html の msgWindow のすぐ下あたりに追加】 -->
-        <div class="window" id="msgWindow">待機中...家族全員が参加したらサイコロを振ってね！</div>
+        <div class="window" id="msgWindow">待機中...全員が参加したらサイコロを振ってね！</div>
 
         <!-- ★追加：アイテム使用エリア -->
         <div id="useItemArea" style="display: none; margin: 10px auto; max-width: 90%; background: #111; border: 2px dashed #fff; padding: 10px; border-radius: 5px;">
@@ -137,6 +137,14 @@
 
         function rollDice() {
             socket.emit('roll_dice');
+        }
+
+         // ★追加：アイテムを使用するボタンが押されたときの関数
+        function clickUseItem() {
+            const select = document.getElementById('itemSelect');
+            if (select && select.value !== "") {
+                socket.emit('use_item', parseInt(select.value));
+            }
         }
 
         function attackEnemy() {
@@ -275,15 +283,37 @@
                 }
             } 
             // 3. 通常移動中の場合
+            // 【② socket.on('state_update', ...) の最後にあるボタン制御（通常移動中のelseの枠内）を以下に修正】
+            // (下の方の 通常移動中の else { ... } の中身を以下に差し替え)
             else {
                 rollBtn.style.display = 'block'; 
+                const useItemArea = document.getElementById('useItemArea');
+
                 if (currentTurnId === socket.id) {
                     rollBtn.disabled = false;
                     rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
+                    
+                    // 自分のターンの場合、アイテム使用エリアを表示し、セレクトボックスを更新
+                    const myPlayer = state.players[socket.id];
+                    if (useItemArea && myPlayer && myPlayer.items.length > 0) {
+                        useItemArea.style.display = 'block';
+                        const select = document.getElementById('itemSelect');
+                        select.innerHTML = ''; // クリア
+                        
+                        myPlayer.items.forEach((item, index) => {
+                            const opt = document.createElement('option');
+                            opt.value = index;
+                            opt.innerText = item;
+                            select.appendChild(opt);
+                        });
+                    } else if (useItemArea) {
+                        useItemArea.style.display = 'none'; // アイテムがなければ隠す
+                    }
                 } else {
                     rollBtn.disabled = true;
                     const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
                     rollBtn.innerText = `${turnName}の 番を 待っています...`;
+                    if (useItemArea) useItemArea.style.display = 'none'; // 他人のターンは隠す
                 }
             }
         }); // <--- ここが socket.on('state_update', ...) の終わりです
