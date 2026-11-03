@@ -44,7 +44,7 @@ let gameState = {
     players: {}, 
     turnIdx: 0,
     socketIds: [],
-    currentMessage: "家族みんなが参加するのを待っている...",
+    currentMessage: "みんなが参加するのを待っている...",
     battleState: {
         inBattle: false,
         activePlayerId: null,
@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
     socket.on('join_game', (data) => {
         if (!gameState.players[socket.id]) {
             const playerNum = Object.keys(gameState.players).length;
-            const isMom = data.name.includes("お母さん") || data.name.toLowerCase() === "mom";
+            const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
             
             gameState.players[socket.id] = {
                 name: data.name,
