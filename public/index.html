@@ -76,8 +76,12 @@
         </div>
 
         <!-- サイコロボタン -->
-        <center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
-
+<!-- 【public/index.html の rollBtn のすぐ下に追加】 -->
+<center>
+    <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
+    <!-- 追加：たたかうボタン（初期状態は非表示） -->
+    <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
+</center>
         <!-- ★全員のステータス表示エリア（ここがボタンの下に確実に残るようにします） -->
         <div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;"></div>
 
@@ -138,6 +142,11 @@
             socket.emit('join_game', { name: name });
             document.getElementById('setup').style.display = 'none';
             document.getElementById('gameRoom').style.display = 'block';
+        }
+
+        // 【public/index.html の script タグ内の joinGame や rollDice の付近に追加】
+        function attackEnemy() {
+            socket.emit('battle_attack');
         }
 
         function rollDice() {
@@ -201,16 +210,39 @@
             }
 
             // ボタンの手番制御
+            // 【socket.on('state_update', ...) の最後にある「ボタンの手番制御」の部分を以下に丸ごと差し替え】
             const currentTurnId = state.socketIds[state.turnIdx];
             const rollBtn = document.getElementById('rollBtn');
-            
-            if (currentTurnId === socket.id) {
-                rollBtn.disabled = false;
-                rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
-            } else {
-                rollBtn.disabled = true;
-                const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
-                rollBtn.innerText = `${turnName}の 番を 待っています...`;
+            const attackBtn = document.getElementById('attackBtn');
+            const bState = state.battleState;
+
+            // 1. 戦闘中の場合
+            if (bState && bState.inBattle) {
+                rollBtn.style.display = 'none'; // サイコロを隠す
+                attackBtn.style.display = 'block'; // たたかうボタンを出す
+
+                if (bState.activePlayerId === socket.id) {
+                    attackBtn.disabled = false;
+                    attackBtn.innerText = `⚔️ あなたが戦闘中！ たたかう (${bState.enemies.length}体残る)`;
+                } else {
+                    attackBtn.disabled = true;
+                    const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
+                    attackBtn.innerText = `⚔️ ${pName}が 戦闘しています...`;
+                }
+            } 
+            // 2. 通常移動中の場合
+            else {
+                rollBtn.style.display = 'block'; // サイコロを出す
+                attackBtn.style.display = 'none'; // たたかうボタンを隠す
+
+                if (currentTurnId === socket.id) {
+                    rollBtn.disabled = false;
+                    rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
+                } else {
+                    rollBtn.disabled = true;
+                    const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
+                    rollBtn.innerText = `${turnName}の 番を 待っています...`;
+                }
             }
         });
     </script>
