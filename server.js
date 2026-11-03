@@ -69,6 +69,7 @@ io.on('connection', (socket) => {
             const playerNum = Object.keys(gameState.players).length;
             const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
             
+// 【① server.js 内の socket.on('join_game', ...) の初期ステータス部分に money を追加】
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
@@ -78,7 +79,8 @@ io.on('connection', (socket) => {
                 attack: isMom ? 15 : 10,   
                 defence: isMom ? 8 : 5,
                 lv: 1,
-                ex: 0
+                ex: 0,
+                money: 100 // ★追加：スタート時のお小遣い
             };
             gameState.socketIds.push(socket.id);
             gameState.currentMessage = `${data.name}が 仲間になった！\n(LV:1 / HP:${gameState.players[socket.id].hp})`;
