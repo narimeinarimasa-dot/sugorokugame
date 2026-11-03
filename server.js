@@ -119,6 +119,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('roll_dice', () => {
+        socket.on('roll_dice', () => {
         if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const player = gameState.players[socket.id];
             
@@ -128,16 +129,32 @@ io.on('connection', (socket) => {
             if (player.expressMode) player.expressMode = false;
 
             let encounteredEnemies = [];
+            let isBossBattle = false; // ★ボス戦かどうかのフラグ
             
             for (let m = 0; m < dice; m++) {
                 player.pos += 1;
-                if (player.pos > 50) { // ★50マスに拡張
+                if (player.pos > 50) { 
                     player.pos = 50;
                     break;
                 }
                 
+                // ★【新規追加】30マス目を踏む、または通過した時に50%の確率で中ボスが出現！
+                if (player.pos === 30) {
+                    if (Math.random() < 0.50) {
+                        encounteredEnemies = [{
+                            name: "⚡きょだいなアリ（中ボス）",
+                            hp: 60,       // 通常の敵の2倍〜3倍タフ！
+                            maxHp: 60,
+                            atk: 14       // 攻撃力もかなり高い！
+                        }];
+                        isBossBattle = true;
+                        break; // ボスが出現したらそのマスで移動を強制ストップして戦闘へ
+                    }
+                }
+                
+                // 通常マスのエンカウント判定（30マス目でボスが出なかった場合、または他の通常マス）
                 const massType = MASS_TYPES[player.pos] || "normal";
-                if (massType === "normal" && player.pos !== 50 && player.pos !== 0) {
+                if (massType === "normal" && player.pos !== 50 && player.pos !== 0 && player.pos !== 30) {
                     if (Math.random() < 0.15) {
                         const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
                         encounteredEnemies.push({
@@ -158,11 +175,15 @@ io.on('connection', (socket) => {
                 gameState.battleState.activePlayerId = socket.id;
                 gameState.battleState.enemies = encounteredEnemies;
 
-                let enemyNames = encounteredEnemies.map(e => `「${e.name}」`).join(' と ');
-                gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
+                if (isBossBattle) {
+                    // ★ボス戦専用の熱いメッセージ
+                    gameState.currentMessage = `【${player.name}】がサイコロを振って 30マス目に 到着した…\n\n‼️おっとーーっと！！ 空気が 一変した！！\nそびえ立つ お前の場所の守護者\n『${encounteredEnemies[0].name}』が 立ちはだかった！\n全員で お母さんを守るんだ！！`;
+                } else {
+                    let enemyNames = encounteredEnemies.map(e => `「${e.name}」`).join(' と ');
+                    gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
+                }
             } else {
                 let levelUpText = "";
-// 【socket.on('roll_dice', ...) 内の、「if (massType === "item") { ... }」の塊を以下に修正】
                 if (massType === "item") {
                     const allItemPool = ["ち力のバット", "お母さんのおむすび", "急行カード", "テレポートカード", "ぶっとびカード", "おうじょのえーる"];
                     const randomItem = allItemPool[Math.floor(Math.random() * allItemPool.length)];
@@ -174,7 +195,6 @@ io.on('connection', (socket) => {
                         eventText += `\n\n🎁 箱の中から 【${randomItem}】を みつけた！\n🎒バッグに 大切に しまった。`;
                     }
                 } else if (massType === "shop") {
-                    // ショップマスの処理...
                     gameState.shopState.inShop = true;
                     gameState.shopState.activePlayerId = socket.id;
                     gameState.shopState.mode = "menu";
@@ -200,23 +220,21 @@ io.on('connection', (socket) => {
                 if (player.pos === 50 || massType === "shop") {
                     // ゴール、またはSHOP到達時は手番を回さない
                 } else {
-                    // 通常の手番移行
-                gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
-                
-                // 次の人が「1回休み」になっていたら、さらにその次の人に手番をスキップする
-                const nextPlayerId = gameState.socketIds[gameState.turnIdx];
-                if (gameState.players[nextPlayerId] && gameState.players[nextPlayerId].skipTurn) {
-                    gameState.players[nextPlayerId].skipTurn = false; // フラグを解除
-                    gameState.currentMessage += `\n\n💤 【${gameState.players[nextPlayerId].name}】は １回休み です！`;
-                    gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length; // スキップ
-                }
+                    // 手番移行と1回休みスキップの処理
+                    gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+                    const nextPlayerId = gameState.socketIds[gameState.turnIdx];
+                    if (gameState.players[nextPlayerId] && gameState.players[nextPlayerId].skipTurn) {
+                        gameState.players[nextPlayerId].skipTurn = false; 
+                        gameState.currentMessage += `\n\n💤 【${gameState.players[nextPlayerId].name}】は １回休み です！`;
+                        gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length; 
+                    }
                 }
             }
             
             io.emit('state_update', gameState);
         }
     });
-
+    
     socket.on('battle_attack', () => {
         const bState = gameState.battleState;
         if (bState.inBattle && bState.activePlayerId === socket.id) {
