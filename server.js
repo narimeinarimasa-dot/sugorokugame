@@ -89,10 +89,11 @@ io.on('connection', (socket) => {
         io.emit('state_update', gameState);
     });
 
-// 【io.on('connection', ...) 内の socket.on('roll_dice', ...) の中身を以下に修正】
+// 【server.js の socket.on('roll_dice', ...) の中身を以下に丸ごと差し替え】
+
     socket.on('roll_dice', () => {
         if (gameState.socketIds[gameState.turnIdx] === socket.id) {
-            const dice = Math.floor(Math.random() * 3) + 1;
+            const dice = Math.floor(Math.random() * 3) + 1; // 1〜3進む
             const player = gameState.players[socket.id];
             
             player.pos += dice;
@@ -100,16 +101,42 @@ io.on('connection', (socket) => {
 
             const massType = MASS_TYPES[player.pos];
             let eventText = MAP_EVENTS[player.pos] || "平穏な日常が過ぎていく。";
-            
-            // マスの種類に応じた追加テキスト（ギミックの土台）
+            let levelUpText = ""; // レベルアップした時用の特別な文章を入れる変数
+
+            // マスの種類に応じたギミック処理
             if (massType === "item") {
                 eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
             } else if (massType === "shop") {
                 eventText += "\n\n▶ [お店が開いた！好きなカードを 買える（仮）]";
+            } else {
+                // 【通常マス】止まると経験値（EX）が 5〜10 の間でランダムに貰える
+                const gainedEx = Math.floor(Math.random() * 6) + 5; 
+                player.ex += gainedEx;
+                eventText += `\n\n▶ ${player.name}は 経験値を 【 ${gainedEx} 】 獲得した！`;
+
+                // 【レベルアップ判定】経験値が 20 たまるごとにレベルアップ！
+                const nextLv = Math.floor(player.ex / 20) + 1;
+                if (nextLv > player.lv) {
+                    player.lv = nextLv;
+                    
+                    // ステータスの上昇（お母さんは大サービスで多めにアップ！）
+                    const hpPlus = player.isMom ? 15 : 8;
+                    const atkPlus = player.isMom ? 5 : 3;
+                    const defPlus = player.isMom ? 3 : 2;
+
+                    player.hp += hpPlus;
+                    player.attack += atkPlus;
+                    player.defence += defPlus;
+
+                    // MOTHER風の熱いレベルアップ演出テキスト
+                    levelUpText = `\n\n🎵 おめでとう！ ${player.name}は レベル ${player.lv} になった！\n・最大ＨＰが ${hpPlus} あがった！\n・ＯＦが ${atkPlus} あがった！\n・ＤＦが ${defPlus} あがった！`;
+                }
             }
 
-            gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}`;
+            // メッセージウィンドウに合体させて表示
+            gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
 
+            // ゴール判定
             if (player.pos === 20) {
                 // ゴール時は手番を動かさない
             } else {
@@ -119,7 +146,7 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-
+    
     // 切断処理
     socket.on('disconnect', () => {
         gameState.socketIds = gameState.socketIds.filter(id => id !== socket.id);
