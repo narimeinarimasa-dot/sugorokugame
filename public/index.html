@@ -210,12 +210,13 @@
                 });
             }
 
-            const currentTurnId = state.socketIds[state.turnIdx];
+             const currentTurnId = state.socketIds[state.turnIdx];
             const rollBtn = document.getElementById('rollBtn');
             const attackBtn = document.getElementById('attackBtn');
             const shopArea = document.getElementById('shopArea');
             const shopMenuButtons = document.getElementById('shopMenuButtons');
             const shopStatusButtons = document.getElementById('shopStatusButtons');
+            const shopItemButtons = document.getElementById('shopItemButtons'); // ★追加
             
             const bState = state.battleState;
             const sState = state.shopState;
@@ -226,7 +227,7 @@
             shopArea.style.display = 'none';
             shopMenuButtons.style.display = 'none';
             shopStatusButtons.style.display = 'none';
-            // ★ここに新しく「const shopItemButtons」の取得と「display = 'none'」を追加します！
+            if (shopItemButtons) shopItemButtons.style.display = 'none'; // ★追加
 
             // 1. 戦闘中の場合
             if (bState && bState.inBattle) {
@@ -248,6 +249,8 @@
                     shopMenuButtons.style.display = 'block';
                 } else if (sState.mode === 'status') {
                     shopStatusButtons.style.display = 'block';
+                } else if (sState.mode === 'item') { // ★追加
+                    if (shopItemButtons) shopItemButtons.style.display = 'block';
                 }
 
                 const isMyShop = (sState.activePlayerId === socket.id);
@@ -275,7 +278,7 @@
                     rollBtn.innerText = `${turnName}の 番を 待っています...`;
                 }
             }
-        });
+        }); // <--- ここが socket.on('state_update', ...) の終わりです
     </script>
 </body>
 </html>
