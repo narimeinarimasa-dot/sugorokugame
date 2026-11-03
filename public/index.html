@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOTHER鉄道 - N</title>
+    <title>MOTHER鉄道 - お母さん誕生日おめでとう</title>
     <style>
         body { background-color: #000; color: #fff; font-family: 'Courier New', Courier, monospace; text-align: center; padding: 10px; margin: 0; }
         h1 { font-size: 24px; margin: 15px 0; color: #fcc419; text-shadow: 2px 2px #cc1111; }
@@ -33,17 +33,31 @@
     <!-- 参加画面 -->
     <div id="setup" class="window">
         <p>あなたの 名前を おしえてください。</p>
-        <input type="text" id="nameInput" placeholder="田中、tanaka、など">
+        <input type="text" id="nameInput" placeholder="お母さん、〇〇、など">
         <center><button class="btn" onclick="joinGame()">ゲームを はじめる</button></center>
     </div>
 
     <!-- ゲーム画面 -->
     <div id="gameRoom" style="display: none;">
-        <div class="window" id="msgWindow">待機中...全員が参加したらサイコロを振ってね！</div>
+        <div class="window" id="msgWindow">待機中...家族全員が参加したらサイコロを振ってね！</div>
 
         <center>
             <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
             <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
+            
+            <!-- SHOP用ボタンエリア -->
+            <div id="shopArea" style="display: none; width: 100%;">
+                <div id="shopMenuButtons">
+                    <button class="btn" onclick="selectShopMenu('status')" style="background:#05101a; border-color:#4dadff;">📈 ステータスを買う</button>
+                    <button class="btn" style="background:#222; border-color:#555; color:#777;" disabled>🎒 アイテムを買う（準備中）</button>
+                </div>
+                <div id="shopStatusButtons" style="display: none;">
+                    <button class="btn" onclick="buyStatus('hp')" style="font-size:15px; width:43%; margin:5px;">❤️ HPアップ (50＄)</button>
+                    <button class="btn" onclick="buyStatus('atk')" style="font-size:15px; width:43%; margin:5px;">⚔️ OFアップ (50＄)</button>
+                    <button class="btn" onclick="buyStatus('def')" style="font-size:15px; width:43%; margin:5px;">🛡️ DFアップ (50＄)</button>
+                </div>
+                <button class="btn" onclick="leaveShop()" style="background:#111; border-color:#fff; margin-top:10px;">🚪 お店を出る</button>
+            </div>
         </center>
 
         <div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;"></div>
@@ -107,25 +121,21 @@
             socket.emit('roll_dice');
         }
 
-          function attackEnemy() {
+        function attackEnemy() {
             socket.emit('battle_attack');
         }
 
-        // ==========================================
-        // ★追加：ここからSHOP用関数をまとめて追加
-        // ==========================================
         function selectShopMenu(mode) {
             socket.emit('shop_select_menu', mode);
         }
+        
         function buyStatus(type) {
             socket.emit('shop_buy_status', type);
         }
+        
         function leaveShop() {
             socket.emit('shop_leave');
         }
-        // ==========================================
-        // ★追加：ここまで
-        // ==========================================
 
         socket.on('state_update', (state) => {
             document.getElementById('msgWindow').innerText = state.currentMessage;
@@ -167,7 +177,6 @@
                         card.style.boxShadow = "0 0 8px rgba(255,255,255,0.8)";
                     }
                     
-                    // 【public/index.html 内の statusArea を描き直している部分（ card.innerHTML ）を以下に修正】
                     card.innerHTML = `
                         <div class="status-name" style="border-left: 4px solid ${p.color}; padding-left: 5px;">${p.name}</div>
                         <div>ＬＶ : ${p.lv}</div>
@@ -184,57 +193,59 @@
             const currentTurnId = state.socketIds[state.turnIdx];
             const rollBtn = document.getElementById('rollBtn');
             const attackBtn = document.getElementById('attackBtn');
+            const shopArea = document.getElementById('shopArea');
+            const shopMenuButtons = document.getElementById('shopMenuButtons');
+            const shopStatusButtons = document.getElementById('shopStatusButtons');
             const bState = state.battleState;
-
+            const sState = state.shopState;
+            rollBtn.style.display = 'none';
+            attackBtn.style.display = 'none';
+            shopArea.style.display = 'none';
+            shopMenuButtons.style.display = 'none';
+            shopStatusButtons.style.display = 'none';
             if (bState && bState.inBattle) {
-                rollBtn.style.display = 'none'; 
-                attackBtn.style.display = 'block'; 
-
-                if (bState.activePlayerId === socket.id) {
-                    attackBtn.disabled = false;
-                    attackBtn.innerText = `⚔️ たたかう (${bState.enemies.length}体残る)`;
-                } else {
-                    attackBtn.disabled = true;
-                    const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
-                    attackBtn.innerText = `⚔️ ${pName}が 戦闘中...`;
-                }
+            attackBtn.style.display = 'block';
+            if (bState.activePlayerId === socket.id) {
+            attackBtn.disabled = false;
+            attackBtn.innerText = ⚔️ たたかう (${bState.enemies.length}体残る);
             } else {
-                rollBtn.style.display = 'block'; 
-                attackBtn.style.display = 'none'; 
-
-                <!-- 【public/index.html の attackBtn のすぐ下あたりに追加】 -->
-        <center>
-            <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
-            <button class="btn" id="attackBtn" onclick="attackEnemy()" style="display: none; background: #220000; border-color: #ff3333; color: #ff9999;">⚔️ たたかう</button>
-            
-            <!-- ★追加：SHOP用ボタンエリア -->
-            <div id="shopArea" style="display: none; width: 100%;">
-                <!-- メニュー選択画面 -->
-                <div id="shopMenuButtons">
-                    <button class="btn" onclick="selectShopMenu('status')" style="background:#05101a; border-color:#4dadff;">📈 ステータスを買う</button>
-                    <button class="btn" style="background:#222; border-color:#555; color:#777;" disabled>🎒 アイテムを買う（準備中）</button>
-                </div>
-                <!-- ステータス購入画面 -->
-                <div id="shopStatusButtons" style="display: none;">
-                    <button class="btn" onclick="buyStatus('hp')" style="font-size:15px; width:43%; margin:5px;">❤️ HPアップ (50＄)</button>
-                    <button class="btn" onclick="buyStatus('atk')" style="font-size:15px; width:43%; margin:5px;">⚔️ OFアップ (50＄)</button>
-                    <button class="btn" onclick="buyStatus('def')" style="font-size:15px; width:43%; margin:5px;">🛡️ DFアップ (50＄)</button>
-                </div>
-                <!-- お店を出るボタン -->
-                <button class="btn" onclick="leaveShop()" style="background:#111; border-color:#fff; margin-top:10px;">🚪 お店を出る</button>
-            </div>
-        </center>
-
-                if (currentTurnId === socket.id) {
-                    rollBtn.disabled = false;
-                    rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
-                } else {
-                    rollBtn.disabled = true;
-                    const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
-                    rollBtn.innerText = `${turnName}の 番を 待っています...`;
-                }
+            attackBtn.disabled = true;
+            const pName = state.players[bState.activePlayerId] ? state.players[bState.activePlayerId].name : "誰か";
+            attackBtn.innerText = ⚔️ ${pName}が 戦闘中...;
             }
-        });
+            }
+            else if (sState && sState.inShop) {
+            shopArea.style.display = 'block';
+            dif (sState.mode === 'menu') {
+            shopMenuButtons.style.display = 'block';
+            } else if (sState.mode === 'status') {
+            shopStatusButtons.style.display = 'block';
+            }
+            const isMyShop = (sState.activePlayerId === socket.id);
+            const allShopBtns = shopArea.getElementsByTagName('button');
+            for (let btn of allShopBtns) {
+            if (!btn.innerText.includes("準備中")) {
+            btn.disabled = !isMyShop;
+            }
+            }
+            if (!isMyShop) {
+            const pName = state.players[sState.activePlayerId] ? state.players[sState.activePlayerId].name : "誰か";
+            document.getElementById('msgWindow').innerText = 🛒 ${pName}が お買い物しています...;
+            }
+            }
+            else {
+            rollBtn.style.display = 'block';
+            if (currentTurnId === socket.id) {
+            rollBtn.disabled = false;
+            rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
+           } else {
+           rollBtn.disabled = true;
+           const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
+           rollBtn.innerText = ${turnName}の 番を 待っています...;
+           }
+           }
+           });
+
     </script>
 </body>
 </html>
