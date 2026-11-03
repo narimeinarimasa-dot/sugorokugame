@@ -212,12 +212,16 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 【② 既存の socket.on('shop_select_menu', ...) の中身を「アイテム購入画面」に対応させる】
     socket.on('shop_select_menu', (mode) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             if (mode === 'status') {
                 sState.mode = "status";
                 gameState.currentMessage = `🛒 【ショップ：ステータス強化】\nどれを 購入しますか？（それぞれ 50＄）`;
+            } else if (mode === 'item') { // ★追加
+                sState.mode = "item";
+                gameState.currentMessage = `🛒 【ショップ：アイテム購入】\nどれを 購入しますか？（持てるのは最大5つまで）`;
             }
             io.emit('state_update', gameState);
         }
