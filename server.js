@@ -96,12 +96,20 @@ io.on('connection', (socket) => {
         io.emit('state_update', gameState);
     });
 
+    // 【② socket.on('roll_dice', ...) 内のサイコロのランダム数決定ロジックを以下に修正】
     socket.on('roll_dice', () => {
         if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
-            const dice = Math.floor(Math.random() * 3) + 1; 
             const player = gameState.players[socket.id];
             
+            // ★修正：急行モードなら1〜6進む、通常なら1〜3進む
+            let maxDice = player.expressMode ? 6 : 3;
+            const dice = Math.floor(Math.random() * maxDice) + 1; 
+            
+            // サイコロを振ったら急行モードは解除する
+            if (player.expressMode) player.expressMode = false;
+
             let encounteredEnemies = [];
+            // (以下、for (let m = 0; m < dice; m++) などの移動処理はそのまま)
             
             for (let m = 0; m < dice; m++) {
                 player.pos += 1;
