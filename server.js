@@ -119,7 +119,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('roll_dice', () => {
-        socket.on('roll_dice', () => {
         if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const player = gameState.players[socket.id];
             
