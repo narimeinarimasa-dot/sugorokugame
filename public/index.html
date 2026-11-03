@@ -70,11 +70,18 @@
 
     <!-- ゲーム画面 -->
     <div id="gameRoom" style="display: none;">
-        <div class="window" id="msgWindow">...</div>
+        <!-- メッセージウィンドウ -->
+        <div class="window" id="msgWindow">
+            待機中...家族全員が参加したらサイコロを振ってね！
+        </div>
 
+        <!-- サイコロボタン -->
         <center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
 
-       <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
+        <!-- ★全員のステータス表示エリア（ここがボタンの下に確実に残るようにします） -->
+        <div id="statusArea" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px auto; max-width: 90%;"></div>
+
+        <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
         <div class="map-container" id="dynamicMap"></div>
     </div>
 
