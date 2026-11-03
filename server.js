@@ -40,18 +40,20 @@ const MAP_EVENTS = {
     20: "ゴール！！！🎉 お母さん、お誕生日おめでとう！いつも本当にありがとう！最高の1年にしようね！"
 };
 
-// 【① gameStateの定義に shopState を追加】
 let gameState = {
     players: {}, 
     turnIdx: 0,
     socketIds: [],
     currentMessage: "家族みんなが参加するのを待っている...",
-    battleState: { inBattle: false, activePlayerId: null, enemies: [] },
-    // --- 追加：買い物管理ステータス ---
+    battleState: {
+        inBattle: false,
+        activePlayerId: null,
+        enemies: [] 
+    },
     shopState: {
         inShop: false,
         activePlayerId: null,
-        mode: "menu" // "menu" (二択画面) または "status" (ステータス購入画面)
+        mode: "menu"
     }
 };
 
@@ -70,9 +72,8 @@ io.on('connection', (socket) => {
     socket.on('join_game', (data) => {
         if (!gameState.players[socket.id]) {
             const playerNum = Object.keys(gameState.players).length;
-            const isMom = data.name.includes("ママ") || data.name.toLowerCase() === "mom";
+            const isMom = data.name.includes("お母さん") || data.name.toLowerCase() === "mom";
             
-// 【① server.js 内の socket.on('join_game', ...) の初期ステータス部分に money を追加】
             gameState.players[socket.id] = {
                 name: data.name,
                 pos: 0,
@@ -83,7 +84,7 @@ io.on('connection', (socket) => {
                 defence: isMom ? 8 : 5,
                 lv: 1,
                 ex: 0,
-                money: 100 // ★追加：スタート時のお小遣い
+                money: 100
             };
             gameState.socketIds.push(socket.id);
             gameState.currentMessage = `${data.name}が 仲間になった！\n(LV:1 / HP:${gameState.players[socket.id].hp})`;
@@ -92,7 +93,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('roll_dice', () => {
-        if (!gameState.battleState.inBattle && gameState.socketIds[gameState.turnIdx] === socket.id) {
+        if (!gameState.battleState.inBattle && !gameState.shopState.inShop && gameState.socketIds[gameState.turnIdx] === socket.id) {
             const dice = Math.floor(Math.random() * 3) + 1; 
             const player = gameState.players[socket.id];
             
@@ -131,11 +132,9 @@ io.on('connection', (socket) => {
                 gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
             } else {
                 let levelUpText = "";
-                // 【② socket.on('roll_dice', ...) 内の、shopマスに止まったときの仮処理を以下に修正】
                 if (massType === "item") {
                     eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
                 } else if (massType === "shop") {
-                    // ★修正：SHOP状態に移行し、手番を次の人に回さない（買い物が終わるまで待つ）
                     gameState.shopState.inShop = true;
                     gameState.shopState.activePlayerId = socket.id;
                     gameState.shopState.mode = "menu";
@@ -158,8 +157,8 @@ io.on('connection', (socket) => {
 
                 gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】が出た！\n\n${eventText}${levelUpText}`;
 
-                if (player.pos === 20) {
-                    // ゴール時
+                if (player.pos === 20 || massType === "shop") {
+                    // ゴール時、またはSHOPマス到達時はここでは手番を回さない
                 } else {
                     gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
                 }
@@ -173,19 +172,16 @@ io.on('connection', (socket) => {
         const bState = gameState.battleState;
         if (bState.inBattle && bState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            const enemy = bState.enemies[0]; // 先頭の敵
+            const enemy = bState.enemies[0]; 
             
             const damageToEnemy = Math.max(1, player.attack - 2);
             enemy.hp -= damageToEnemy;
 
             let battleLog = `${player.name}の こうげき！\n${enemy.name}に ${damageToEnemy} の ダメージを与えた！\n`;
 
-            // 【② server.js 内の socket.on('battle_attack', ...) の敵撃破処理部分を以下に修正】
             if (enemy.hp <= 0) {
-                // ★追加：敵を1体倒すごとに 15〜40＄ のお小遣いが手に入る
                 const gainedMoney = Math.floor(Math.random() * 26) + 15;
                 player.money += gainedMoney;
-                
                 battleLog += `▼ ${enemy.name}を たおした！\n▶ 【お小遣い ${gainedMoney}＄】を 手に入れた！\n`;
                 bState.enemies.shift(); 
             }
@@ -202,7 +198,7 @@ io.on('connection', (socket) => {
             if (bState.enemies.length === 0) {
                 const bonusEx = 15;
                 player.ex += bonusEx;
-                battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が まもられた。`;
+                battleLog += `\n勝利した！ 経験値を 【 ${bonusEx} 】 獲得！\nみんなの平和が まま守られた。`;
                 
                 bState.inBattle = false;
                 bState.activePlayerId = null;
@@ -213,11 +209,7 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-       // ==========================================
-    // ★追加：ここからSHOP用イベントをまとめて追加
-    // ==========================================
 
-    // SHOPメニューの選択 (ステータス購入画面へ切り替え)
     socket.on('shop_select_menu', (mode) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
@@ -229,12 +221,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ステータスを実際に購入する処理
+    // SHOPメニューの選択 (ステータス購入画面へ切り替え)
     socket.on('shop_buy_status', (type) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            const COST = 50; // 一律50ドル
+            const COST = 50; 
 
             if (player.money >= COST) {
                 player.money -= COST;
@@ -262,14 +254,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // お店を出る（買い物を終了して次の人のターンへ）
     socket.on('shop_leave', () => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
             gameState.currentMessage = `🛒 「またどうぞ！」\n${player.name}は お店をあとにした。`;
             
-            // SHOP状態をリセットし、手番を次の人に回す
             sState.inShop = false;
             sState.activePlayerId = null;
             sState.mode = "menu";
@@ -278,12 +268,6 @@ io.on('connection', (socket) => {
             io.emit('state_update', gameState);
         }
     });
-
-    // ==========================================
-    // ★追加：ここまで
-    // ==========================================
-
-    // 既存の切断処理
 
     socket.on('disconnect', () => {
         gameState.socketIds = gameState.socketIds.filter(id => id !== socket.id);
