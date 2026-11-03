@@ -172,8 +172,13 @@ io.on('connection', (socket) => {
 
             let battleLog = `${player.name}の こうげき！\n${enemy.name}に ${damageToEnemy} の ダメージを与えた！\n`;
 
+            // 【② server.js 内の socket.on('battle_attack', ...) の敵撃破処理部分を以下に修正】
             if (enemy.hp <= 0) {
-                battleLog += `▼ ${enemy.name}を たおした！\n`;
+                // ★追加：敵を1体倒すごとに 15〜40＄ のお小遣いが手に入る
+                const gainedMoney = Math.floor(Math.random() * 26) + 15;
+                player.money += gainedMoney;
+                
+                battleLog += `▼ ${enemy.name}を たおした！\n▶ 【お小遣い ${gainedMoney}＄】を 手に入れた！\n`;
                 bState.enemies.shift(); 
             }
 
