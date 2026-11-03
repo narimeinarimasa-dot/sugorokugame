@@ -107,9 +107,25 @@
             socket.emit('roll_dice');
         }
 
-        function attackEnemy() {
+          function attackEnemy() {
             socket.emit('battle_attack');
         }
+
+        // ==========================================
+        // ★追加：ここからSHOP用関数をまとめて追加
+        // ==========================================
+        function selectShopMenu(mode) {
+            socket.emit('shop_select_menu', mode);
+        }
+        function buyStatus(type) {
+            socket.emit('shop_buy_status', type);
+        }
+        function leaveShop() {
+            socket.emit('shop_leave');
+        }
+        // ==========================================
+        // ★追加：ここまで
+        // ==========================================
 
         socket.on('state_update', (state) => {
             document.getElementById('msgWindow').innerText = state.currentMessage;
