@@ -39,7 +39,15 @@
 
     <!-- ゲーム画面 -->
     <div id="gameRoom" style="display: none;">
-        <div class="window" id="msgWindow">待機中...全員が参加したらサイコロを振ってね！</div>
+        <!-- 【public/index.html の msgWindow のすぐ下あたりに追加】 -->
+        <div class="window" id="msgWindow">待機中...家族全員が参加したらサイコロを振ってね！</div>
+
+        <!-- ★追加：アイテム使用エリア -->
+        <div id="useItemArea" style="display: none; margin: 10px auto; max-width: 90%; background: #111; border: 2px dashed #fff; padding: 10px; border-radius: 5px;">
+            <span style="font-size:14px; color:#aaa;">🎒 カバンのアイテムを使う：</span>
+            <select id="itemSelect" style="padding: 8px; background: #000; color: #fff; border: 1px solid #fff; border-radius: 3px; font-size: 14px; max-width: 60%;"></select>
+            <button onclick="clickUseItem()" style="background: #15051a; color: #b84dff; border: 2px solid #b84dff; padding: 6px 12px; font-size: 14px; font-weight: bold; border-radius: 3px; cursor: pointer; margin-left: 5px;">つかう</button>
+        </div>
 
         <center>
             <button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button>
