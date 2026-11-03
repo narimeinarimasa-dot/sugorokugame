@@ -162,9 +162,19 @@ io.on('connection', (socket) => {
                 gameState.currentMessage = `【${player.name}】がサイコロを振って【 ${dice} 】マス進んだ！\n\nうわっと！ 道中で ${enemyNames} が あらわれた！\n戦闘開始だ！`;
             } else {
                 let levelUpText = "";
+// 【socket.on('roll_dice', ...) 内の、「if (massType === "item") { ... }」の塊を以下に修正】
                 if (massType === "item") {
-                    eventText += "\n\n▶ [アイテムを 1つ 手に入れた！（仮）]";
+                    const allItemPool = ["ち力のバット", "お母さんのおむすび", "急行カード", "テレポートカード", "ぶっとびカード", "おうじょのえーる"];
+                    const randomItem = allItemPool[Math.floor(Math.random() * allItemPool.length)];
+                    
+                    if (player.items.length >= 5) {
+                        eventText += `\n\n🎁 不思議な箱を開けたが、🎒バッグがいっぱいだった！\n何も手に入らなかった…`;
+                    } else {
+                        player.items.push(randomItem);
+                        eventText += `\n\n🎁 箱の中から 【${randomItem}】を みつけた！\n🎒バッグに 大切に しまった。`;
+                    }
                 } else if (massType === "shop") {
+                    // ショップマスの処理...
                     gameState.shopState.inShop = true;
                     gameState.shopState.activePlayerId = socket.id;
                     gameState.shopState.mode = "menu";
@@ -190,7 +200,16 @@ io.on('connection', (socket) => {
                 if (player.pos === 50 || massType === "shop") {
                     // ゴール、またはSHOP到達時は手番を回さない
                 } else {
-                    gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+                    // 通常の手番移行
+                gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+                
+                // 次の人が「1回休み」になっていたら、さらにその次の人に手番をスキップする
+                const nextPlayerId = gameState.socketIds[gameState.turnIdx];
+                if (gameState.players[nextPlayerId] && gameState.players[nextPlayerId].skipTurn) {
+                    gameState.players[nextPlayerId].skipTurn = false; // フラグを解除
+                    gameState.currentMessage += `\n\n💤 【${gameState.players[nextPlayerId].name}】は １回休み です！`;
+                    gameState.turnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length; // スキップ
+                }
                 }
             }
             
@@ -230,7 +249,7 @@ io.on('connection', (socket) => {
                 player.hp = Math.floor(player.maxHp / 2); // HP半分で復活
                 player.pos = 0; // スタート地点へ強制送還
                 
-                battleLog += `\n☠️ あーーっと！！ ${player.name}は ちからつきてしまった！\n▶ ペナルティ：お小遣いが ${lostMoney}＄ 減ってしまった！\n▶ お母さんの実家（スタート地点）へ 搬送されました…`;
+                battleLog += `\n☠️ あーーっと！！ ${player.name}は ちからつきてしまった！\n▶ ペナルティ：お小遣いが ${lostMoney}＄ 減ってしまった！\n▶ スタート地点へ 搬送されました…`;
                 
                 // 戦闘を強制終了し、次の人のターンへ
                 bState.inBattle = false;
@@ -314,7 +333,12 @@ io.on('connection', (socket) => {
         const sState = gameState.shopState;
         if (sState.inShop && sState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            const ITEM_PRICES = { "ち力のバット": 50, "お母さんのおむすび": 30, "急行カード": 40 };
+            
+            // 価格設定（新しいアイテムは高額！）
+            const ITEM_PRICES = { 
+                "ち力のバット": 30, "お母さんのおむすび": 20, "急行カード": 40,
+                "テレポートカード": 120, "ぶっとびカード": 150, "おうじょのえーる": 200
+            };
             const cost = ITEM_PRICES[itemName];
 
             if (player.items.length >= 5) {
@@ -355,7 +379,7 @@ io.on('connection', (socket) => {
             const player = gameState.players[socket.id];
             
             if (player.items && player.items[itemIdx]) {
-                const itemName = player.items.splice(itemIdx, 1)[0]; // 選択されたアイテムを取り出す
+                const itemName = player.items.splice(itemIdx, 1);
                 let useLog = `🎒 ${player.name}は 【${itemName}】を 使った！\n\n`;
 
                 if (itemName === "ち力のバット") {
@@ -363,11 +387,47 @@ io.on('connection', (socket) => {
                     useLog += `▶ 攻撃への じしんが みなぎってきた！ ＯＦが 5 あがった！`;
                 } else if (itemName === "お母さんのおむすび") {
                     player.hp += 30;
-                    if (player.hp > player.maxHp) player.hp = player.maxHp; // 最大HPを超えない
+                    if (player.hp > player.maxHp) player.hp = player.maxHp;
                     useLog += `▶ 懐かしい味がした！ ＨＰが 30 回復した！`;
                 } else if (itemName === "急行カード") {
                     player.expressMode = true;
                     useLog += `▶ 体が 軽くなった！ 次に振るサイコロが 【最大６マス】 にパワーアップした！`;
+                } 
+                // ★新規レアアイテム効果の追加
+                else if (itemName === "テレポートカード") {
+                    // 自分以外のプレイヤーをリストアップ
+                    const otherIds = gameState.socketIds.filter(id => id !== socket.id);
+                    if (otherIds.length > 0) {
+                        const targetId = otherIds[Math.floor(Math.random() * otherIds.length)];
+                        const targetPlayer = gameState.players[targetId];
+                        
+                        // 位置を入れ替える（スワップ）
+                        const myOldPos = player.pos;
+                        player.pos = targetPlayer.pos;
+                        targetPlayer.pos = myOldPos;
+                        
+                        useLog += `▶ 時空が ゆがんだ！！\n【${player.name}】と【${targetPlayer.name}】の 位置が 入れ替わった！`;
+                    } else {
+                        useLog += `▶ しかし 誰も周りに いなかった！ (不発に終わった)`;
+                    }
+                } else if (itemName === "ぶっとびカード") {
+                    // 次のターンのプレイヤーを1回休みにする
+                    const nextTurnIdx = (gameState.turnIdx + 1) % gameState.socketIds.length;
+                    const targetId = gameState.socketIds[nextTurnIdx];
+                    const targetPlayer = gameState.players[targetId];
+                    
+                    if (targetPlayer && targetId !== socket.id) {
+                        targetPlayer.skipTurn = true; // 1回休みフラグをオンに
+                        useLog += `▶ 突風が 吹き荒れた！\n次にサイコロを振る 【${targetPlayer.name}】は 次の１回が【お休み】 になる！`;
+                    } else {
+                        useLog += `▶ しかし 風は 虚しく 吹き抜けた…`;
+                    }
+                } else if (itemName === "おうじょのえーる") {
+                    player.maxHp += 10;
+                    player.hp += 10;
+                    player.attack += 10;
+                    player.defence += 10;
+                    useLog += `▶ 女神（お母さん）の 祝福を うけた！\n全ステータス（ＨＰ・ＯＦ・ＤＦ）が 永久に 【 10 】 アップした！！`;
                 }
 
                 gameState.currentMessage = useLog;
@@ -375,7 +435,6 @@ io.on('connection', (socket) => {
             }
         }
     });
-
     // ==========================================
     // 🔌 切断処理 と サーバー起動
     // ==========================================
