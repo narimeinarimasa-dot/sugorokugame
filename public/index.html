@@ -20,7 +20,22 @@
         .piece { width: 16px; height: 16px; border-radius: 50%; display: inline-block; position: relative; }
         .piece-name { font-size: 8px; color: #fff; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
         
-        #setup input { width: 80%; padding: 12px; font-size: 16px; background: #000; color: #fff; border: 2px solid #fff; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+        /* 参加画面全体を中央揃えにする */
+#setup { text-align: center; }
+
+/* 入力欄を真ん中に配置する */
+#setup input { 
+    display: block; 
+    margin: 0 auto 15px auto; 
+    width: 80%; 
+    padding: 12px; 
+    font-size: 16px; 
+    background: #000; 
+    color: #fff; 
+    border: 2px solid #fff; 
+    border-radius: 5px; 
+    text-align: center; 
+}
     </style>
 </head>
 <body>
