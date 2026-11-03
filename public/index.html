@@ -30,7 +30,7 @@
     <!-- 参加画面 -->
     <div id="setup" class="window">
         <p>あなたの 名前を おしえてください。</p>
-        <input type="text" id="nameInput" placeholder="お母さん、〇〇、など">
+        <input type="text" id="nameInput" placeholder="田中,tanaka,など">
         <center><button class="btn" onclick="joinGame()">ゲームを はじめる</button></center>
     </div>
 
@@ -40,21 +40,43 @@
 
         <center><button class="btn" id="rollBtn" onclick="rollDice()">サイコロを振る！</button></center>
 
-        <!-- スマホ用・縦型マップ (0~6マス) -->
-        <div class="map-container">
-            <div class="mass" id="m6" style="border-color: #ff6b6b; background: #221111;"><span class="mass-title">🎁 6: ゴール！</span><div class="pieces-area" id="p6"></div></div>
-            <div class="mass" id="m5"><span class="mass-title">🏠 5: 最近の話</span><div class="pieces-area" id="p5"></div></div>
-            <div class="mass" id="m4"><span class="mass-title">♨️ 4: 温泉旅行</span><div class="pieces-area" id="p4"></div></div>
-            <div class="mass" id="m3"><span class="mass-title">👶 3: 私の誕生</span><div class="pieces-area" id="p3"></div></div>
-            <div class="mass" id="m2"><span class="mass-title">💬 2: 出会い</span><div class="pieces-area" id="p2"></div></div>
-            <div class="mass" id="m1"><span class="mass-title">🏫 1: 学生時代</span><div class="pieces-area" id="p1"></div></div>
-            <div class="mass" id="m0" style="border-color: #51cf66;"><span class="mass-title">🏁 0: スタート</span><div class="pieces-area" id="p0"></div></div>
-        </div>
+       <!-- スマホ用・縦型マップ (0~20マスを自動生成) -->
+        <div class="map-container" id="dynamicMap"></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
+
+        // 20マスのタイトル定義
+        const massTitles = {
+            0: "🏁 0: スタート",  1: "👶 1: お母さん誕生", 2: "🎒 2: 幼少期の思い出",
+            3: "🏫 3: 学生時代",   4: "💬 4: お父さんと出会い", 5: "💍 5: プロポーズ",
+            6: "⛪ 6: 結婚式",     7: "🏡 7: 新婚生活",     8: "🍼 8: 私の誕生",
+            9: "💤 9: 育児奮闘記", 10: "♨️ 10: 初めての家族旅行", 11: "⚡ 11: 子どもの反抗期",
+            12: "🍱 12: 毎日のお弁当", 13: "💼 13: パート開始",    14: "🎨 14: 趣味の開花",
+            15: "🔥 15: 夫婦の大ゲンカ", 16: "💬 16: 家族会議",   17: "📱 17: 最近の話",
+            18: "🤫 18: 誕生日前のソワソワ", 19: "✨ 19: もうすぐ会場", 20: "🎁 20: ゴール！"
+        };
+
+        // 20マスを画面に自動生成（ゴールが一番上にくるように20からカウントダウン）
+        const mapContainer = document.getElementById('dynamicMap');
+        for (let i = 20; i >= 0; i--) {
+            const massDiv = document.createElement('div');
+            massDiv.className = 'mass';
+            massDiv.id = `m${i}`;
+            
+            // 特殊マスの色変え
+            if (i === 20) {
+                massDiv.style.borderColor = '#ff6b6b';
+                massDiv.style.background = '#221111';
+            } else if (i === 0) {
+                massDiv.style.borderColor = '#51cf66';
+            }
+
+            massDiv.innerHTML = `<span class="mass-title">${massTitles[i]}</span><div class="pieces-area" id="p${i}"></div>`;
+            mapContainer.appendChild(massDiv);
+        }
 
         function joinGame() {
             const name = document.getElementById('nameInput').value.trim();
@@ -72,9 +94,10 @@
             // メッセージウィンドウの更新
             document.getElementById('msgWindow').innerText = state.currentMessage;
 
-            // マスのコマエリアをすべてクリア
-            for(let i = 0; i <= 6; i++) {
-                document.getElementById(`p${i}`).innerHTML = '';
+            // すべてのマス（0〜20）のコマエリアをクリア
+            for(let i = 0; i <= 20; i++) {
+                const container = document.getElementById(`p${i}`);
+                if(container) container.innerHTML = '';
             }
 
             // 全プレイヤーのコマを配置
@@ -89,7 +112,7 @@
                     piece.style.boxShadow = "0 0 0 2px #fff";
                 }
 
-                // コマの上に名前のイニシャルや短縮名を表示
+                // コマの上に名前の最初の3文字を表示
                 const nameLabel = document.createElement('span');
                 nameLabel.className = 'piece-name';
                 nameLabel.innerText = p.name.substring(0, 3);
@@ -107,7 +130,6 @@
             if (currentTurnId === socket.id) {
                 rollBtn.disabled = false;
                 rollBtn.innerText = "▶ あなたの番です！サイコロを振る";
-                rollBtn.style.animation = "blink 1s infinite"; // 自分の番を目立たせる
             } else {
                 rollBtn.disabled = true;
                 const turnName = state.players[currentTurnId] ? state.players[currentTurnId].name : "誰か";
