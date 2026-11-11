@@ -279,7 +279,7 @@ io.on('connection', (socket) => {
         const bState = gameState.battleState;
         if (bState.inBattle && bState.activePlayerId === socket.id) {
             const player = gameState.players[socket.id];
-            const enemy = bState.enemies[0]; 
+            const enemy = bState.enemies.at(0); 
             
             const damageToEnemy = Math.max(1, player.attack - 2);
             enemy.hp -= damageToEnemy;
@@ -294,7 +294,7 @@ io.on('connection', (socket) => {
             }
 
             if (bState.enemies.length > 0) {
-                const activeEnemy = bState.enemies[0];
+                const activeEnemy = bState.enemies.at(0);
                 const damageToPlayer = Math.max(1, activeEnemy.atk - Math.floor(player.defence / 2));
                 player.hp -= damageToPlayer;
                 battleLog += `▼ ${activeEnemy.name}の はんげき！\n${player.name}は ${damageToPlayer} の ダメージを受けた！\n`;
