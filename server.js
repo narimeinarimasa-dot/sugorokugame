@@ -7,11 +7,18 @@ const io = require('socket.io')(http, {
 
 app.use(express.static('public'));
 
-// 50マスの種類定義（ normal:通常, item:アイテム, shop:お店 ）
+// 50マスの種類定義（ normal:通常, item:アイテム, shop:お店, plus:お金プラス, minus:お金マイナス ）
 const MASS_TYPES = {};
+const SHOP_SQUARES =;
+const ITEM_SQUARES =;
+const PLUS_SQUARES =;
+const MINUS_SQUARES =;
+
 for (let i = 0; i <= 50; i++) {
-    if ([5, 15, 25, 35, 45].includes(i)) MASS_TYPES[i] = "shop";
-    else if ([2, 10, 18, 28, 38, 48].includes(i)) MASS_TYPES[i] = "item";
+    if (SHOP_SQUARES.includes(i)) MASS_TYPES[i] = "shop";
+    else if (ITEM_SQUARES.includes(i)) MASS_TYPES[i] = "item";
+    else if (PLUS_SQUARES.includes(i)) MASS_TYPES[i] = "plus";
+    else if (MINUS_SQUARES.includes(i)) MASS_TYPES[i] = "minus";
     else MASS_TYPES[i] = "normal";
 }
 
