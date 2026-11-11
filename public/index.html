@@ -116,10 +116,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const shopSquares =;
-        const itemSquares =;
-        const plusSquares =;
-        const minusSquares =;
+        const shopSquares = new Array(5, 15, 25, 35, 45);
+        const itemSquares = new Array(2, 10, 18, 28, 38, 48);
+        const plusSquares = new Array(3, 8, 13, 19, 24, 31, 37, 42, 47);
+        const minusSquares = new Array(6, 11, 17, 22, 29, 34, 40, 44, 49);
 
         // 50マスのタイトル自動生成
         const massTitles = { 0: "🏁 0: スタート", 50: "🎉 50: ゴール！" };
