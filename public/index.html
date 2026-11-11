@@ -36,8 +36,10 @@
         }
         .monster-img {
         image-rendering: pixelated; /* ドット絵をクッキリ表示する魔法のCSS */
-        max-height: 100px;
-        margin-bottom: 8px;
+        width: 160px;  /* 横幅を大きく指定（お好みで 150px〜200px に調整可能） */
+        height: 160px; /* 高さも大きく指定 */
+        object-fit: contain; /* 縦横比が崩れないように自動調整 */
+        margin-bottom: 10px;
         }
         .enemy-hp-bar-bg {
         width: 150px;
