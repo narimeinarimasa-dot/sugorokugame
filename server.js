@@ -169,21 +169,21 @@ io.on('connection', (socket) => {
                 // ② ★ここを書き換えます！（通常マスのエンカウント判定）
                 const massType = MASS_TYPES[player.pos] || "normal";
                 if (massType === "normal" && player.pos !== 50 && player.pos !== 0 && player.pos !== 30) {
-                    if (Math.random() < 0.5) {
+                    if (Math.random() < 0.2) {
                         // ↓↓↓ この中身を新しいランダム強化コードに差し替え！ ↓↓↓
                         const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
                         
-                        const powerScale = 0.8 + Math.random() * 4.2;
+                        const powerScale = 0.8 + Math.random() * 1.2;
                         const randomHp = Math.round(template.hp * powerScale);
                         const randomAtk = Math.round(template.atk * powerScale);
-                        const prefix = powerScale >= 2 ? "💢凶暴な " : "";
+                        const prefix = powerScale >= 1.3 ? "💢凶暴な " : "";
 
                         encounteredEnemies.push({
                             name: prefix + template.name,
                             hp: randomHp,
                             maxHp: randomHp,
                             atk: randomAtk,
-                            isStrong: powerScale >= 2
+                            isStrong: powerScale >= 1.3
                         });
                         // ↑↑↑ ここまで ↑↑↑
                     }
