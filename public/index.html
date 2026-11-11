@@ -187,8 +187,40 @@
         }
 
         socket.on('state_update', (state) => {
-            document.getElementById('msgWindow').innerText = state.currentMessage;
+            const msgWindow = document.getElementById('msgWindow');
+            const currentBattle = state.battleState;
 
+            // 戦闘中の場合は、ドット絵画像とHPステータスをログの上に配置する
+            if (currentBattle && currentBattle.inBattle && currentBattle.enemies.length > 0) {
+                const currentEnemy = currentBattle.enemies[0]; // 先頭の敵を取得
+                
+                // 敵の名前から画像ファイルを自動判別するマッピング
+                let imgName = "fly.png"; // デフォルト
+                if (currentEnemy.name.includes("オウム")) imgName = "public.parrot.png";
+                else if (currentEnemy.name.includes("いぬ")) imgName = "public.dog.png";
+                else if (currentEnemy.name.includes("にわとり")) imgName = "public.chicken.png";
+                else if (currentEnemy.name.includes("アリ")) imgName = "public.boss.png";
+
+                // HPの残り割合を計算してバーの長さを変える
+                const hpPercent = Math.max(0, Math.min(100, (currentEnemy.hp / currentEnemy.maxHp) * 100));
+
+                // ウィンドウ内を「画像＋HPバー＋戦闘ログ」の構造に書き換える
+                msgWindow.innerHTML = `
+                    <div class="battle-monster-area">
+                        <img src="${imgName}" class="monster-img" alt="monster">
+                        <div style="font-size: 14px; margin-bottom: 4px; color: #ff9999;">
+                            ${currentEnemy.name} (HP: ${currentEnemy.hp} / ${currentEnemy.maxHp})
+                        </div>
+                        <div class="enemy-hp-bar-bg">
+                            <div class="enemy-hp-bar-fill" style="width: ${hpPercent}%;"></div>
+                        </div>
+                    </div>
+                    <div style="white-space: pre-wrap;">${state.currentMessage}</div>
+                `;
+            } else {
+                // 通常時や買い物時は、今まで通りテキストのみを綺麗に表示する
+                msgWindow.innerHTML = `<div style="white-space: pre-wrap;">${state.currentMessage}</div>`;
+            }
             for(let i = 0; i <= 50; i++) { // ★50マス分クリア
                 const container = document.getElementById(`p${i}`);
                 if(container) container.innerHTML = '';
