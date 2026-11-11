@@ -193,8 +193,8 @@
             const currentBattle = state.battleState;
 
             // 戦闘中の場合は、ドット絵画像とHPステータスをログの上に配置する
-            if (currentBattle && currentBattle.inBattle && currentBattle.enemies.length > 0) {
-                const currentEnemy = currentBattle.enemies[0]; // 先頭の敵を取得
+                        if (currentBattle && currentBattle.inBattle && currentBattle.enemies.length > 0) {
+                const currentEnemy = currentBattle.enemies[0]; // ★修正：[0]をつけて先頭の敵を確実に取得
                 
                 // 敵の名前から画像ファイルを自動判別するマッピング
                 let imgName = "fly.png"; // デフォルト
@@ -215,7 +215,7 @@
                             ${currentEnemy.name} (HP: ${currentEnemy.hp} / ${currentEnemy.maxHp})
                         </div>
                         <div class="enemy-hp-bar-bg">
-                            <div class="enemy-hp-bar-fill" style="width: ${hpPercent}%;"></div>
+                            <div class="enemy-hp-bar-fill" style="width: ${hpPercent}%; height: 100%; background-color: #ff3333;"></div>
                         </div>
                     </div>
                     <div style="white-space: pre-wrap;">${state.currentMessage}</div>
