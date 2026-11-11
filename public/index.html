@@ -198,7 +198,7 @@
   // 戦闘中の場合は、ドット絵画像とHPステータスをログの上に配置する
   if (currentBattle && currentBattle.inBattle && currentBattle.enemies.length > 0) {
     // ★修正1：配列の先頭（0番目）の敵を取得
-    const currentEnemy = currentBattle.enemies[0];
+    const currentEnemy = currentBattle.enemies.at(0);
 
     // 敵の名前から画像ファイルを自動判別（★修正2：ファイル名を環境に合わせて調整）
     let imgName = "fly.png";
