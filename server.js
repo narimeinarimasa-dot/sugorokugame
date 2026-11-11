@@ -226,6 +226,18 @@ io.on('connection', (socket) => {
                     gameState.shopState.activePlayerId = socket.id;
                     gameState.shopState.mode = "menu";
                     eventText += `\n\n🛒 お店が開いた！\n何を お買い物 しますか？`;
+                // ↓↓↓ ここから追加 ↓↓↓
+                } else if (massType === "plus") {
+                    const baseGain = Math.floor(Math.random() * 41) + 20;
+                    const gainMoney = player.isMom ? baseGain + 20 : baseGain;
+                    player.money += gainMoney;
+                    eventText += `\n\n💰 【プラスマス】臨時収入だ！\nお小遣いを 【 ${gainMoney}＄ 】 手に入れた！`;
+                } else if (massType === "minus") {
+                    const baseLoss = Math.floor(Math.random() * 31) + 15;
+                    const actualLoss = Math.min(player.money, baseLoss);
+                    player.money -= actualLoss;
+                    eventText += `\n\n💸 【マイナスマス】うっかり出費が発生！\nお小遣いを 【 ${actualLoss}＄ 】 失ってしまった…`;
+                // ↑↑↑ ここまで追加 ↑↑↑
                 } else {
                     const gainedEx = Math.floor(Math.random() * 6) + 5; 
                     player.ex += gainedEx;
