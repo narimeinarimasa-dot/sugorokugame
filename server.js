@@ -13,7 +13,7 @@ const MASS_TYPES = {};
 const SHOP_SQUARES = new Array(5, 15, 25, 35, 45);
 const ITEM_SQUARES = new Array(2, 10, 18, 28, 38, 48);
 const PLUS_SQUARES = new Array(3, 8, 13, 19, 24, 31, 37, 42, 47);
-const MINUS_SQUARES = new Array(6, 11, 17, 22, 29, 34, 40, 44, 49);
+const MINUS_SQUARES = new Array(6, 17, 29, 40, 44);
 
 for (let i = 0; i <= 50; i++) {
     if (SHOP_SQUARES.includes(i)) MASS_TYPES[i] = "shop";
