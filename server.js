@@ -81,9 +81,9 @@ let gameState = {
 };
 
 const ENEMY_POOL = [
-    { name: "おんちなオウム", hp: 20, atk: 6 },
-    { name: "きまぐれなノラいぬ", hp: 25, atk: 8 },
-    { name: "にやにやにわとり", hp: 15, atk: 5 },
+    { name: "おんちなオウム", hp: 40, atk: 6 },
+    { name: "きまぐれなノラいぬ", hp: 45, atk: 10 },
+    { name: "にやにやにわとり", hp: 35, atk: 8 },
     { name: "ちっちゃいハエ", hp: 10, atk: 3 }
 ];
 
@@ -142,9 +142,9 @@ io.on('connection', (socket) => {
                     if (Math.random() < 0.50) {
                         encounteredEnemies = [{
                             name: "⚡きょだいなアリ（中ボス）",
-                            hp: 100,       // 通常の敵の2倍〜3倍タフ！
-                            maxHp: 100,
-                            atk: 14       // 攻撃力もかなり高い！
+                            hp: 150,       // 通常の敵の2倍〜3倍タフ！
+                            maxHp: 150,
+                            atk: 18       // 攻撃力もかなり高い！
                         }];
                         isBossBattle = true;
                         break; // ボスが出現したらそのマスで移動を強制ストップして戦闘へ
@@ -166,7 +166,28 @@ io.on('connection', (socket) => {
                 }
             }
 
-            const massType = MASS_TYPES[player.pos] || "normal";
+                // ② ★ここを書き換えます！（通常マスのエンカウント判定）
+                const massType = MASS_TYPES[player.pos] || "normal";
+                if (massType === "normal" && player.pos !== 50 && player.pos !== 0 && player.pos !== 30) {
+                    if (Math.random() < 0.5) {
+                        // ↓↓↓ この中身を新しいランダム強化コードに差し替え！ ↓↓↓
+                        const template = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
+                        
+                        const powerScale = 0.8 + Math.random() * 4.2;
+                        const randomHp = Math.round(template.hp * powerScale);
+                        const randomAtk = Math.round(template.atk * powerScale);
+                        const prefix = powerScale >= 2 ? "💢凶暴な " : "";
+
+                        encounteredEnemies.push({
+                            name: prefix + template.name,
+                            hp: randomHp,
+                            maxHp: randomHp,
+                            atk: randomAtk,
+                            isStrong: powerScale >= 2
+                        });
+                        // ↑↑↑ ここまで ↑↑↑
+                    }
+                }
             let eventText = MAP_EVENTS[player.pos] || "平穏な日常が過ぎていく。";
 
             if (encounteredEnemies.length > 0) {
