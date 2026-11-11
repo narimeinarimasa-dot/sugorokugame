@@ -8,11 +8,12 @@ const io = require('socket.io')(http, {
 app.use(express.static('public'));
 
 // 50マスの種類定義（ normal:通常, item:アイテム, shop:お店, plus:お金プラス, minus:お金マイナス ）
+// 50マスの種類定義（角カッコを使わない安全な書き方）
 const MASS_TYPES = {};
-const SHOP_SQUARES =;
-const ITEM_SQUARES =;
-const PLUS_SQUARES =;
-const MINUS_SQUARES =;
+const SHOP_SQUARES = new Array(5, 15, 25, 35, 45);
+const ITEM_SQUARES = new Array(2, 10, 18, 28, 38, 48);
+const PLUS_SQUARES = new Array(3, 8, 13, 19, 24, 31, 37, 42, 47);
+const MINUS_SQUARES = new Array(6, 11, 17, 22, 29, 34, 40, 44, 49);
 
 for (let i = 0; i <= 50; i++) {
     if (SHOP_SQUARES.includes(i)) MASS_TYPES[i] = "shop";
