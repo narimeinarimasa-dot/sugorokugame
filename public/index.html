@@ -124,30 +124,28 @@
         // 50マスのタイトル自動生成
         const massTitles = { 0: "🏁 0: スタート", 50: "🎉 50: ゴール！" };
         for (let i = 1; i < 50; i++) {
-            if ([5, 15, 25, 35, 45].includes(i)) massTitles[i] = `🛒 ${i}: SHOPマス`;
-            else if ([2, 10, 18, 28, 38, 48].includes(i)) massTitles[i] = `🎁 ${i}: アイテムマス`;
+            if (shopSquares.includes(i)) massTitles[i] = `🛒 ${i}: SHOPマス`;
+            else if (itemSquares.includes(i)) massTitles[i] = `🎁 ${i}: アイテムマス`;
+            else if (plusSquares.includes(i)) massTitles[i] = `💰 ${i}: プラスマス`;
+            else if (minusSquares.includes(i)) massTitles[i] = `💸 ${i}: マイナスマス`;
+            else if (i === 30) massTitles[i] = `⚠️ 30: 強敵の気配…`;
             else massTitles[i] = `💬 ${i}: 通常マス`;
         }
 
         const mapContainer = document.getElementById('dynamicMap');
         if (mapContainer && mapContainer.children.length === 0) {
-            for (let i = 50; i >= 0; i--) { // ★50から逆順生成
+            for (let i = 50; i >= 0; i--) {
                 const massDiv = document.createElement('div');
                 massDiv.className = 'mass';
                 massDiv.id = `m${i}`;
                 
-                if (i === 50) {
-                    massDiv.style.borderColor = '#ff6b6b';
-                    massDiv.style.background = '#221111';
-                } else if (i === 0) {
-                    massDiv.style.borderColor = '#51cf66';
-                } else if ([2, 10, 18, 28, 38, 48].includes(i)) {
-                    massDiv.style.borderColor = '#fcc419';
-                    massDiv.style.background = '#1a1505';
-                } else if ([5, 15, 25, 35, 45].includes(i)) {
-                    massDiv.style.borderColor = '#4dadff';
-                    massDiv.style.background = '#05101a';
-                }
+                if (i === 50) { massDiv.style.borderColor = '#ff6b6b'; massDiv.style.background = '#221111'; }
+                else if (i === 0) { massDiv.style.borderColor = '#51cf66'; }
+                else if (i === 30) { massDiv.style.borderColor = '#ff3333'; massDiv.style.background = '#220000'; }
+                else if (itemSquares.includes(i)) { massDiv.style.borderColor = '#fcc419'; massDiv.style.background = '#1a1505'; }
+                else if (shopSquares.includes(i)) { massDiv.style.borderColor = '#4dadff'; massDiv.style.background = '#05101a'; }
+                else if (plusSquares.includes(i)) { massDiv.style.borderColor = '#20c997'; massDiv.style.background = '#051a14'; }
+                else if (minusSquares.includes(i)) { massDiv.style.borderColor = '#ff6b6b'; massDiv.style.background = '#1a0808'; }
 
                 massDiv.innerHTML = `<span class="mass-title">${massTitles[i]}</span><div class="pieces-area" id="p${i}"></div>`;
                 mapContainer.appendChild(massDiv);
